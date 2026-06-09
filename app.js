@@ -10,7 +10,9 @@ const cors = require('cors');
 app.use(cors({
   origin: [
     "http://ms2026.softerstudio.pl",
-    "https://ms2026.softerstudio.pl"
+    "https://ms2026.softerstudio.pl",
+    "http://cyberfolks.pl",
+    "https://cyberfolks.pl"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
@@ -63,7 +65,9 @@ app.get('/api/me/bets', auth, async (req, res) => {
 app.options('*', cors({
   origin: [
     "http://ms2026.softerstudio.pl",
-    "https://ms2026.softerstudio.pl"
+    "https://ms2026.softerstudio.pl",
+    "http://cyberfolks.pl",
+    "https://cyberfolks.pl"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
