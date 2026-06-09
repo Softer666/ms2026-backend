@@ -58,5 +58,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MŚ 2026 Portal uruchomiony na porcie ${PORT}`);
   // Uruchom zadania cron (sync API, deadlines)
-  require('./config/cron').startCron();
+  //require('./config/cron').startCron();
+  console.log("CRON wyłączony na czas deployu");
+  
 });
