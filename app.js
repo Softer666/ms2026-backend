@@ -17,7 +17,7 @@ const app = express();
 
 
 
-// Middleware
+// Middlewaare
 app.use(cors());
 app.use(express.json());
 
