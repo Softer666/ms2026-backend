@@ -1,9 +1,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+app.use(cors({
+  origin: [
+    "http://ms2026.softerstudio.pl",
+    "https://ms2026.softerstudio.pl"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 const path = require('path');
 
 const app = express();
+
+
+
 
 // Middleware
 app.use(cors());
