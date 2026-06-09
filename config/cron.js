@@ -30,6 +30,12 @@ async function fetchAndSyncMatches() {
     const matches = data.matches;
 
     for (const m of matches) {
+
+         // IGNORUJ MECZE BEZ DRUŻYN
+    if (!m.homeTeam?.name || !m.awayTeam?.name) {
+        console.log("[CRON] Pomijam mecz bez drużyn:", m.id);
+        continue;
+    }
       const homeTeam = m.homeTeam.name;
       const awayTeam = m.awayTeam.name;
       const matchDate = new Date(m.utcDate);
