@@ -59,6 +59,16 @@ app.get('/api/me/bets', auth, async (req, res) => {
   res.json(rows);
 });
 
+// Handle CORS preflight requests
+app.options('*', cors({
+  origin: [
+    "http://ms2026.softerstudio.pl",
+    "https://ms2026.softerstudio.pl"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 // Serwuj frontend (pliki statyczne)
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 app.get('*', (req, res) => {
