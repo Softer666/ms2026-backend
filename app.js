@@ -1,37 +1,48 @@
 require('dotenv').config();
 const express = require('express');
-
-
 const path = require('path');
+const cors = require('cors'); // Przeniesione wyżej dla porządku
+const db = require('./config/db');
+const { auth } = require('./middleware/auth');
 
 const app = express();
 
-const cors = require('cors');
-app.use(cors({
-  origin: [
-     'http://ms2026.softerstudio.pl',
-    'https://ms2026.softerstudio.pl',
-    'http://www.ms2026.softerstudio.pl',
-    'https://www.ms2026.softerstudio.pl'
+// ==========================================
+// 1. KONFIGURACJA CORS (Zawsze na samym początku!)
+// ==========================================
+const allowedOrigins = [
+  'http://ms2026.softerstudio.pl',
+  'https://ms2026.softerstudio.pl',
+  'http://www.ms2026.softerstudio.pl',
+  'https://www.ms2026.softerstudio.pl'
+];
 
-  ],
-  credentials: true
-}));
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
-app.options('*', cors());
-// Middleware 2
+// Włączamy CORS dla wszystkich zwykłych żądań
+app.use(cors(corsOptions));
 
+// Włączamy CORS dla żądań "preflight" (OPTIONS) na jednej wspólnej regule
+app.options('*', cors(corsOptions));
+
+// ==========================================
+// 2. MIDDLEWARE
+// ==========================================
 app.use(express.json());
 
-// API routes
+// ==========================================
+// 3. ŚCIEŻKI API (API Routes)
+// ==========================================
 app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/admin',   require('./routes/admin'));
 
 // Ranking publiczny (zalogowani)
-const { auth } = require('./middleware/auth');
-const db = require('./config/db');
-
 app.get('/api/ranking', auth, async (req, res) => {
   const [rows] = await db.execute(`
     SELECT u.id, u.name, u.is_child, u.is_paused,
@@ -61,28 +72,22 @@ app.get('/api/me/bets', auth, async (req, res) => {
   res.json(rows);
 });
 
-// Handle CORS preflight requests
-app.options('*', cors({
-  origin: [
-    "http://ms2026.softerstudio.pl",
-    "https://ms2026.softerstudio.pl"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-
-// Serwuj frontend (pliki statyczne)
+// ==========================================
+// 4. SERWOWANIE FRONTENDU (Zawsze na samym końcu!)
+// ==========================================
+// Ta sekcja musi być pod API, bo inaczej gwiazdka '*' przechwyci zapytania do API
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/index.html'));
 });
 
-// Start
+// ==========================================
+// 5. START SERWERA
+// ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MŚ 2026 Portal uruchomiony na porcie ${PORT}`);
   // Uruchom zadania cron (sync API, deadlines)
   require('./config/cron').startCron();
   console.log("CRON wyłączony na czas deployu");
-  
 });
