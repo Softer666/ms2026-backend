@@ -19,7 +19,7 @@ app.use(cors({
 }));
 
 app.options('*', cors());
-// Middleware
+// Middleware 2
 
 app.use(express.json());
 
