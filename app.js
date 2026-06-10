@@ -73,7 +73,7 @@ app.get('/api/me/bets', auth, async (req, res) => {
 });
 
 // ==========================================
-// 4. SERWOWANIE FRONTENDU (Zawsze na samym końcu!)
+// 4. SERWOWANIE FRONTENDU (Zawsze na samym końcu!HEJ)
 // ==========================================
 // Ta sekcja musi być pod API, bo inaczej gwiazdka '*' przechwyci zapytania do API
 app.use(express.static(path.join(__dirname, '../frontend/public')));
