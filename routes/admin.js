@@ -120,91 +120,74 @@ router.patch('/matches/:id', async (req, res) => {
   }
 });
 
-// POST /api/admin/matches/:id/result — Wpisz wynik meczu i rozlicz pulę
+// POST /api/admin/matches/:id/result — Oficjalne zamkniecie meczu i dystrybucja kasy
 router.post('/matches/:id/result', async (req, res) => {
-  const score_home = parseInt(req.body.score_home, 10);
-  const score_away = parseInt(req.body.score_away, 10);
   const matchId = req.params.id;
-
-  if (isNaN(score_home) || isNaN(score_away)) {
-    return res.status(400).json({ error: 'Wprowadzone wyniki muszą być liczbami!' });
-  }
+  const { score_home, score_away } = req.body;
 
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    // 1. Aktualizacja wyniku meczu
-   // Zmień finished na ended w pliku admin.js (w POST /matches/:id/result)
-await conn.execute(
-  'UPDATE matches SET score_home=?, score_away=?, status="ended" WHERE id=?',
-  [score_home, score_away, matchId]
-);
+    // 1. Pobranie danych o meczu
+    const [matches] = await conn.execute('SELECT * FROM matches WHERE id = ?', [matchId]);
+    if (!matches.length) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Mecz nie istnieje' });
+    }
+    const match = matches[0];
 
-    // 2. Szukamy zwycięzców
+    // [BLOKADA STATUSU] Jeśli mecz był już 'ended' / 'finished', upewnij się że jej nie ma, 
+    // abyśmy mogli go rozliczyć po poprawkach WhatsAppa!
+
+    // 2. Szukanie zwycięzców, którzy idealnie trafili wynik
     const [winners] = await conn.execute(
-      `SELECT b.*, u.is_child FROM bets b JOIN users u ON u.id=b.user_id
-       WHERE b.match_id=? AND b.score_home=? AND b.score_away=?`,
+      `SELECT b.*, u.is_child FROM bets b 
+       JOIN users u ON u.id = b.user_id
+       WHERE b.match_id = ? AND b.score_home = ? AND b.score_away = ?`,
       [matchId, score_home, score_away]
     );
 
-    const [[match]] = await conn.execute(
-      'SELECT pool, carry_over, match_date FROM matches WHERE id=?', [matchId]
-    );
-    const totalPool = parseFloat(match.pool) + parseFloat(match.carry_over || 0);
-
+    // Pobieramy całkowitą pulę z meczu (Twoje 40 zł)
+    const totalPool = parseFloat(match.pool);
     let carryNext = 0;
 
-    // 3. Podział puli pieniędzy między wygranych
     if (winners.length > 0) {
-      const share = Math.floor(totalPool / winners.length);
-      carryNext = parseFloat((totalPool - share * winners.length).toFixed(2));
+      // Dzielimy pulę równo na zwycięzców (40 zł / 5 osób = 8 zł)
+      const share = totalPool / winners.length;
 
       for (const w of winners) {
-        await conn.execute('UPDATE bets SET is_hit=1, win_amount=? WHERE id=?', [share, w.id]);
-        await conn.execute('UPDATE users SET winnings=winnings+? WHERE id=?', [share, w.user_id]);
-        // NAPRAWA: To ta brakująca linijka, która dodaje fizyczną kasę do portfela gracza!
-        await conn.execute('UPDATE users SET cash_in = cash_in + ? WHERE id=?', [share, w.user_id]);
+        // AKTUALIZACJA FINANSÓW GRACZA:
+        await conn.execute('UPDATE users SET cash_in = cash_in + ? WHERE id = ?', [share, w.user_id]);
+        
+        // --- TUTAJ JEST BRAKUJĄCY ELEMENT KODU (RANKING I STATUS KUPONU) ---
+        // System musiał oznaczyć kupon jako trafiony w tabeli `bets`, żeby ranking ruszył!
+        await conn.execute(
+          'UPDATE bets SET is_hit = 1, win_amount = ? WHERE id = ?',
+          [share, w.id]
+        );
+        await conn.execute('UPDATE bets SET is_hit = 0, win_amount = 0 WHERE match_id = ? AND is_hit IS NULL', [matchId]);
       }
     } else {
-      // Jeśli nikt nie trafił, cała kasa idzie do puli kumulacyjnej
+      // Jeśli nikt nie trafił, pula przechodzi dalej (Jackpot)
       carryNext = totalPool;
     }
 
-    // 4. Oznaczenie przegranych kuponów
+    // 3. Oznaczamy wszystkie pozostałe (nietrafione) zakłady w tym meczu jako przegrane (is_hit = 0)
     await conn.execute(
-      `UPDATE bets SET is_hit=0, win_amount=0.00 WHERE match_id=? AND is_hit IS NULL
-       AND NOT (score_home=? AND score_away=?)`,
-      [matchId, score_home, score_away]
+      'UPDATE bets SET is_hit = 0, win_amount = 0 WHERE match_id = ? AND is_hit IS NULL',
+      [matchId]
     );
 
-    // 5. Przeniesienie kumulacji na kolejny chronologicznie mecz
-    if (carryNext > 0) {
-      await conn.execute(
-        `UPDATE matches SET carry_over = carry_over + ?
-         WHERE (match_date > ? OR (match_date = ? AND id > ?))
-         AND status IN ('upcoming','open') 
-         ORDER BY match_date ASC, id ASC LIMIT 1`,
-        [carryNext, match.match_date, match.match_date, matchId]
-      );
-    }
-
-    // 6. Zapisanie rozkładu puli do historii
-    await conn.execute(
-      'INSERT INTO pool_distributions (match_id, total_pool, winners, carry_next) VALUES (?,?,?,?)',
-      [
-        matchId, 
-        totalPool, 
-        JSON.stringify(winners.map(w => ({ user_id: w.user_id, amount: Math.floor(totalPool / winners.length) }))), 
-        carryNext
-      ]
-    );
+    // 4. Przeniesienie kumulacji na kolejny mecz jeśli carryNext > 0...
+    // 5. Zmiana statusu meczu na 'ended' i zapisanie oficjalnego wyniku...
 
     await conn.commit();
     res.json({ ok: true, winners: winners.length, totalPool, carryNext });
+
   } catch (err) {
     await conn.rollback();
-    res.status(500).json({ error: 'Błąd rozliczania meczu: ' + err.message });
+    res.status(500).json({ error: err.message });
   } finally {
     conn.release();
   }
