@@ -93,9 +93,8 @@ router.post('/payments', async (req, res) => {
   }
 });
 
-// POST /api/admin/matches/:id/result — wpisz wynik meczu i rozlicz pulę
+// POST /api/admin/matches/:id/result — Wpisz wynik meczu i rozlicz pulę
 router.post('/matches/:id/result', async (req, res) => {
-  // Zabezpieczenie: Konwersja danych wejściowych na liczby całkiem chroni dopasowanie typów w bazie!
   const score_home = parseInt(req.body.score_home, 10);
   const score_away = parseInt(req.body.score_away, 10);
   const matchId = req.params.id;
@@ -108,7 +107,7 @@ router.post('/matches/:id/result', async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // 1. Aktualizacja wyniku meczu i zamrożenie statusu jako finished
+    // 1. Aktualizacja wyniku meczu
     await conn.execute(
       'UPDATE matches SET score_home=?, score_away=?, status="finished" WHERE id=?',
       [score_home, score_away, matchId]
@@ -128,38 +127,30 @@ router.post('/matches/:id/result', async (req, res) => {
 
     let carryNext = 0;
 
-    // 3. Podział puli
+    // 3. Podział puli pieniędzy między wygranych
     if (winners.length > 0) {
       const share = Math.floor(totalPool / winners.length);
       carryNext = parseFloat((totalPool - share * winners.length).toFixed(2));
 
       for (const w of winners) {
-        // Aktualizacja kuponu
-        await conn.execute(
-          'UPDATE bets SET is_hit=1, win_amount=? WHERE id=?', [share, w.id]
-        );
-        // Aktualizacja statystyki wygranych sumarycznie
-        await conn.execute(
-          'UPDATE users SET winnings=winnings+? WHERE id=?', [share, w.user_id]
-        );
-        // NAPRAWA: Zwiększamy fizyczny stan konta gracza (w aplikacji dopisujemy to do cash_in / portfela)
-        await conn.execute(
-          'UPDATE users SET cash_in = cash_in + ? WHERE id=?', [share, w.user_id]
-        );
+        await conn.execute('UPDATE bets SET is_hit=1, win_amount=? WHERE id=?', [share, w.id]);
+        await conn.execute('UPDATE users SET winnings=winnings+? WHERE id=?', [share, w.user_id]);
+        // NAPRAWA: To ta brakująca linijka, która dodaje fizyczną kasę do portfela gracza!
+        await conn.execute('UPDATE users SET cash_in = cash_in + ? WHERE id=?', [share, w.user_id]);
       }
     } else {
-      // Jeśli nikt nie wygrał, cała pula staje się kumulacją
+      // Jeśli nikt nie trafił, cała kasa idzie do puli kumulacyjnej
       carryNext = totalPool;
     }
 
-    // 4. Oznaczenie przegranych kuponów (is_hit = 0)
+    // 4. Oznaczenie przegranych kuponów
     await conn.execute(
       `UPDATE bets SET is_hit=0, win_amount=0.00 WHERE match_id=? AND is_hit IS NULL
        AND NOT (score_home=? AND score_away=?)`,
       [matchId, score_home, score_away]
     );
 
-    // 5. Przeniesienie ewentualnego carry_over na kolejny chronologicznie mecz (Bezpieczniejsza kwerenda)
+    // 5. Przeniesienie kumulacji na kolejny chronologicznie mecz
     if (carryNext > 0) {
       await conn.execute(
         `UPDATE matches SET carry_over = carry_over + ?
@@ -170,7 +161,7 @@ router.post('/matches/:id/result', async (req, res) => {
       );
     }
 
-    // 6. Zapisanie historii dystrybucji puli
+    // 6. Zapisanie rozkładu puli do historii
     await conn.execute(
       'INSERT INTO pool_distributions (match_id, total_pool, winners, carry_next) VALUES (?,?,?,?)',
       [
@@ -185,7 +176,7 @@ router.post('/matches/:id/result', async (req, res) => {
     res.json({ ok: true, winners: winners.length, totalPool, carryNext });
   } catch (err) {
     await conn.rollback();
-    res.status(500).json({ error: 'Błąd procesu rozliczenia meczu: ' + err.message });
+    res.status(500).json({ error: 'Błąd rozliczania meczu: ' + err.message });
   } finally {
     conn.release();
   }
