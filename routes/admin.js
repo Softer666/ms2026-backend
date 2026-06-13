@@ -108,10 +108,11 @@ router.post('/matches/:id/result', async (req, res) => {
     await conn.beginTransaction();
 
     // 1. Aktualizacja wyniku meczu
-    await conn.execute(
-      'UPDATE matches SET score_home=?, score_away=?, status="finished" WHERE id=?',
-      [score_home, score_away, matchId]
-    );
+   // Zmień finished na ended w pliku admin.js (w POST /matches/:id/result)
+await conn.execute(
+  'UPDATE matches SET score_home=?, score_away=?, status="ended" WHERE id=?',
+  [score_home, score_away, matchId]
+);
 
     // 2. Szukamy zwycięzców
     const [winners] = await conn.execute(
