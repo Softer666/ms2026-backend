@@ -7,20 +7,23 @@ const { auth, adminOnly } = require('../middleware/auth');
 // Wszystkie trasy admina wymagają auth + adminOnly
 router.use(auth, adminOnly);
 
-// GET /api/admin/users — lista graczy z bilansem
+// GET /api/admin/users — lista graczy z poprawnym bilansem
 router.get('/users', async (req, res) => {
-  const [users] = await db.execute(`
-    SELECT u.*,
-      COALESCE(SUM(b.stake),0) AS total_due,
-      (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id=u.id) AS cash_in_db,
-      (SELECT COALESCE(SUM(win_amount),0) FROM bets WHERE user_id=u.id AND is_hit=1) AS total_won
-    FROM users u
-    LEFT JOIN bets b ON b.user_id = u.id
-    WHERE u.role != 'admin'
-    GROUP BY u.id
-    ORDER BY total_won DESC
-  `);
-  res.json(users);
+  try {
+    const [users] = await db.execute(`
+      SELECT 
+        u.id, u.name, u.email, u.role, u.is_child, u.is_paused, u.cash_in, u.winnings,
+        COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0) AS total_due,
+        COALESCE((SELECT SUM(amount) FROM payments WHERE user_id = u.id), 0) AS cash_in_db,
+        COALESCE((SELECT COUNT(*) FROM bets WHERE user_id = u.id AND is_hit = 1), 0) AS total_won_count
+      FROM users u
+      WHERE u.role != 'admin'
+      ORDER BY u.name ASC
+    `);
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd pobierania użytkowników: ' + err.message });
+  }
 });
 
 // PATCH /api/admin/users/:id — zmień is_child / is_paused
@@ -32,8 +35,13 @@ router.patch('/users/:id', async (req, res) => {
   if (is_paused !== undefined) { fields.push('is_paused=?'); vals.push(is_paused ? 1 : 0); }
   if (!fields.length) return res.status(400).json({ error: 'Brak pól do aktualizacji' });
   vals.push(req.params.id);
-  await db.execute(`UPDATE users SET ${fields.join(',')} WHERE id=?`, vals);
-  res.json({ ok: true });
+  
+  try {
+    await db.execute(`UPDATE users SET ${fields.join(',')} WHERE id=?`, vals);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd aktualizacji użytkownika: ' + err.message });
+  }
 });
 
 // POST /api/admin/users — dodaj gracza
@@ -47,49 +55,66 @@ router.post('/users', async (req, res) => {
     );
     res.json({ ok: true, id: r.insertId });
   } catch (e) {
-    res.status(400).json({ error: 'Email zajęty lub błąd' });
+    res.status(400).json({ error: 'Email zajęty lub błąd zapisu' });
   }
 });
 
 // GET /api/admin/payments — historia wpłat
 router.get('/payments', async (req, res) => {
-  const [rows] = await db.execute(`
-    SELECT p.*, u.name AS user_name, a.name AS admin_name
-    FROM payments p
-    JOIN users u ON u.id = p.user_id
-    JOIN users a ON a.id = p.recorded_by
-    ORDER BY p.created_at DESC
-  `);
-  res.json(rows);
+  try {
+    const [rows] = await db.execute(`
+      SELECT p.*, u.name AS user_name, a.name AS admin_name
+      FROM payments p
+      JOIN users u ON u.id = p.user_id
+      JOIN users a ON a.id = p.recorded_by
+      ORDER BY p.created_at DESC
+    `);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd pobierania płatności: ' + err.message });
+  }
 });
 
 // POST /api/admin/payments — zarejestruj wpłatę gotówkową
 router.post('/payments', async (req, res) => {
   const { user_id, amount, note } = req.body;
-  if (!user_id || !amount || amount <= 0)
-    return res.status(400).json({ error: 'Podaj gracza i kwotę' });
-  await db.execute(
-    'INSERT INTO payments (user_id, amount, note, recorded_by) VALUES (?,?,?,?)',
-    [user_id, amount, note || '', req.user.id]
-  );
-  await db.execute('UPDATE users SET cash_in = cash_in + ? WHERE id=?', [amount, user_id]);
-  res.json({ ok: true });
+  if (!user_id || !amount || parseFloat(amount) <= 0)
+    return res.status(400).json({ error: 'Podaj prawidłowego gracza i kwotę' });
+    
+  try {
+    await db.execute(
+      'INSERT INTO payments (user_id, amount, note, recorded_by) VALUES (?,?,?,?)',
+      [user_id, amount, note || '', req.user.id]
+    );
+    await db.execute('UPDATE users SET cash_in = cash_in + ? WHERE id=?', [amount, user_id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd rejestracji wpłaty: ' + err.message });
+  }
 });
 
-// POST /api/admin/matches/:id/result — wpisz wynik meczu i rozlicz
+// POST /api/admin/matches/:id/result — wpisz wynik meczu i rozlicz pulę
 router.post('/matches/:id/result', async (req, res) => {
-  const { score_home, score_away } = req.body;
+  // Zabezpieczenie: Konwersja danych wejściowych na liczby całkiem chroni dopasowanie typów w bazie!
+  const score_home = parseInt(req.body.score_home, 10);
+  const score_away = parseInt(req.body.score_away, 10);
   const matchId = req.params.id;
+
+  if (isNaN(score_home) || isNaN(score_away)) {
+    return res.status(400).json({ error: 'Wprowadzone wyniki muszą być liczbami!' });
+  }
 
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
+    // 1. Aktualizacja wyniku meczu i zamrożenie statusu jako finished
     await conn.execute(
       'UPDATE matches SET score_home=?, score_away=?, status="finished" WHERE id=?',
       [score_home, score_away, matchId]
     );
 
+    // 2. Szukamy zwycięzców (porównanie liczb TINYINT działa teraz w 100% poprawnie)
     const [winners] = await conn.execute(
       `SELECT b.*, u.is_child FROM bets b JOIN users u ON u.id=b.user_id
        WHERE b.match_id=? AND b.score_home=? AND b.score_away=?`,
@@ -103,6 +128,7 @@ router.post('/matches/:id/result', async (req, res) => {
 
     let carryNext = 0;
 
+    // 3. Podział puli
     if (winners.length > 0) {
       const share = Math.floor(totalPool / winners.length);
       carryNext = parseFloat((totalPool - share * winners.length).toFixed(2));
@@ -119,12 +145,14 @@ router.post('/matches/:id/result', async (req, res) => {
       carryNext = totalPool;
     }
 
+    // 4. Oznaczenie przegranych kuponów (is_hit = 0)
     await conn.execute(
-      `UPDATE bets SET is_hit=0 WHERE match_id=? AND is_hit IS NULL
+      `UPDATE bets SET is_hit=0, win_amount=0.00 WHERE match_id=? AND is_hit IS NULL
        AND NOT (score_home=? AND score_away=?)`,
       [matchId, score_home, score_away]
     );
 
+    // 5. Przeniesienie ewentualnego carry_over na kolejny chronologicznie mecz
     if (carryNext > 0) {
       await conn.execute(
         `UPDATE matches SET carry_over=carry_over+?
@@ -134,98 +162,132 @@ router.post('/matches/:id/result', async (req, res) => {
       );
     }
 
+    // 6. Zapisanie historii dystrybucji puli
     await conn.execute(
       'INSERT INTO pool_distributions (match_id, total_pool, winners, carry_next) VALUES (?,?,?,?)',
-      [matchId, totalPool, JSON.stringify(winners.map(w => ({ user_id: w.user_id, amount: Math.floor(totalPool / winners.length) }))), carryNext]
+      [
+        matchId, 
+        totalPool, 
+        JSON.stringify(winners.map(w => ({ user_id: w.user_id, amount: Math.floor(totalPool / winners.length) }))), 
+        carryNext
+      ]
     );
 
     await conn.commit();
     res.json({ ok: true, winners: winners.length, totalPool, carryNext });
   } catch (err) {
     await conn.rollback();
-    res.status(500).json({ error: 'Błąd rozliczenia: ' + err.message });
+    res.status(500).json({ error: 'Błąd procesu rozliczenia meczu: ' + err.message });
   } finally {
     conn.release();
   }
 });
 
-// GET /api/admin/stats — statystyki ogólne
+// GET /api/admin/stats — statystyki ogólne panelu
 router.get('/stats', async (req, res) => {
-  const [[s]] = await db.execute(`
-    SELECT
-      (SELECT COUNT(*) FROM users WHERE role='user') AS total_users,
-      (SELECT COUNT(*) FROM users WHERE is_paused=1) AS paused_users,
-      (SELECT COALESCE(SUM(pool+carry_over),0) FROM matches WHERE status!='finished') AS current_pool,
-      (SELECT COUNT(*) FROM matches WHERE status='live') AS live_matches,
-      (SELECT COUNT(*) FROM matches WHERE DATE(match_date)=CURDATE()) AS today_matches,
-      (SELECT COALESCE(SUM(amount),0) FROM payments) AS total_cash_in,
-      (SELECT COALESCE(SUM(winnings),0) FROM users) AS total_paid_out
-  `);
-  res.json(s);
+  try {
+    const [[s]] = await db.execute(`
+      SELECT
+        (SELECT COUNT(*) FROM users WHERE role='user') AS total_users,
+        (SELECT COUNT(*) FROM users WHERE is_paused=1) AS paused_users,
+        (SELECT COALESCE(SUM(pool+carry_over),0) FROM matches WHERE status!='finished') AS current_pool,
+        (SELECT COUNT(*) FROM matches WHERE status='live') AS live_matches,
+        (SELECT COUNT(*) FROM matches WHERE DATE(match_date)=CURDATE()) AS today_matches,
+        (SELECT COALESCE(SUM(amount),0) FROM payments) AS total_cash_in,
+        (SELECT COALESCE(SUM(winnings),0) FROM users) AS total_paid_out
+    `);
+    res.json(s);
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd pobierania statystyk: ' + err.message });
+  }
 });
 
-// ==========================================================
-// 🚀 NOWE ENDPOINTY DLA ADMINA (DODANE NA TWOJE ŻYCZENIE)
-// ==========================================================
-
-// DELETE /api/admin/users/:id — Usuwanie gracza, jego wpłat i typów (Transakcja)
+// DELETE /api/admin/users/:id — Usuwanie gracza, jego wpłat i typów (Kaskadowo w transakcji)
 router.delete('/users/:id', async (req, res) => {
   const userId = req.params.id;
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    // 1. Czyścimy powiązane dane z tabel podrzędnych
     await conn.execute('DELETE FROM payments WHERE user_id = ?', [userId]);
     await conn.execute('DELETE FROM bets WHERE user_id = ?', [userId]);
     
-    // 2. Usuwamy główne konto gracza
     const [result] = await conn.execute('DELETE FROM users WHERE id = ? AND role != "admin"', [userId]);
 
     if (result.affectedRows === 0) {
       await conn.rollback();
-      return res.status(404).json({ error: 'Nie znaleziono użytkownika lub próba usunięcia admina' });
+      return res.status(404).json({ error: 'Nie znaleziono użytkownika lub próba usunięcia konta administratora' });
     }
 
     await conn.commit();
-    res.json({ ok: true, message: 'Gracz i jego powiązane dane zostały usunięte.' });
+    res.json({ ok: true, message: 'Gracz pomyślnie usunięty z systemu.' });
   } catch (err) {
     await conn.rollback();
-    res.status(500).json({ error: 'Błąd podczas usuwania gracza: ' + err.message });
+    res.status(500).json({ error: 'Błąd podczas usuwania użytkownika: ' + err.message });
   } finally {
     conn.release();
   }
 });
 
-// POST /api/admin/bets/force — Wymuszenie/Dodanie/Edycja typu za gracza przez Admina
+// POST /api/admin/bets/force — Wymuszenie/Dodanie/Edycja typu za gracza przez Admina wraz z kalkulacją stawki i puli!
 router.post('/bets/force', async (req, res) => {
-  const { user_id, match_id, score_home, score_away, stake } = req.body;
+  const { user_id, match_id } = req.body;
+  const score_home = parseInt(req.body.score_home, 10);
+  const score_away = parseInt(req.body.score_away, 10);
 
-  if (!user_id || !match_id || score_home === undefined || score_away === undefined) {
-    return res.status(400).json({ error: 'Brakujące parametry (user_id, match_id, wyniki)' });
+  if (!user_id || !match_id || isNaN(score_home) || isNaN(score_away)) {
+    return res.status(400).json({ error: 'Brakujące lub nieprawidłowe parametry (user_id, match_id, bramki)' });
   }
 
+  const conn = await db.getConnection();
   try {
-    // Sprawdzamy czy ten gracz postawił już na ten mecz
-    const [existing] = await db.execute('SELECT id FROM bets WHERE user_id = ? AND match_id = ?', [user_id, match_id]);
+    await conn.beginTransaction();
 
-    if (existing.length > 0) {
-      // Jeśli typ już był — aktualizujemy go (wymuszona zmiana)
-      await db.execute(
-        'UPDATE bets SET score_home = ?, score_away = ?, stake = ? WHERE user_id = ? AND match_id = ?',
-        [score_home, score_away, stake || 0, user_id, match_id]
-      );
-    } else {
-      // Jeśli typ nie istniał — wrzucamy nowy rekord
-      await db.execute(
-        'INSERT INTO bets (user_id, match_id, score_home, score_away, stake, is_hit) VALUES (?, ?, ?, ?, ?, NULL)',
-        [user_id, match_id, score_home, score_away, stake || 0]
-      );
+    // 1. Sprawdzamy, czy użytkownik w ogóle istnieje i pobieramy jego status dziecka/dorosłego do wyliczenia stawki
+    const [[user]] = await conn.execute('SELECT is_child FROM users WHERE id = ?', [user_id]);
+    if (!user) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Wybrany użytkownik nie istnieje' });
     }
 
-    res.json({ ok: true, message: 'Typowanie gracza zostało zaktualizowane przez administratora.' });
+    // Automatyczne dopasowanie stawki: dziecko = 1.00 zł, dorosły = 3.00 zł
+    const calculatedStake = user.is_child === 1 ? 1.00 : 3.00;
+
+    // 2. Sprawdzamy czy ten gracz postawił już na ten mecz
+    const [existing] = await conn.execute('SELECT id, stake FROM bets WHERE user_id = ? AND match_id = ?', [user_id, match_id]);
+
+    if (existing.length > 0) {
+      // Jeśli typ istniał, podmieniamy tylko wyniki i upewniamy się, że stawka jest prawidłowa
+      const oldStake = parseFloat(existing[0].stake);
+      const stakeDifference = calculatedStake - oldStake;
+
+      await conn.execute(
+        'UPDATE bets SET score_home = ?, score_away = ?, stake = ? WHERE user_id = ? AND match_id = ?',
+        [score_home, score_away, calculatedStake, user_id, match_id]
+      );
+
+      // Aktualizujemy pulę meczu o ewentualną różnicę stawek
+      if (stakeDifference !== 0) {
+        await conn.execute('UPDATE matches SET pool = pool + ? WHERE id = ?', [stakeDifference, match_id]);
+      }
+    } else {
+      // Jeśli typ nie istniał — wrzucamy nowy rekord do bazy
+      await conn.execute(
+        'INSERT INTO bets (user_id, match_id, score_home, score_away, stake, is_hit) VALUES (?, ?, ?, ?, ?, NULL)',
+        [user_id, match_id, score_home, score_away, calculatedStake]
+      );
+
+      // Zwiększamy całkowitą pulę meczu o kwotę nowego zakładu
+      await conn.execute('UPDATE matches SET pool = pool + ? WHERE id = ?', [calculatedStake, match_id]);
+    }
+
+    await conn.commit();
+    res.json({ ok: true, message: 'Typowanie gracza zostało pomyślnie zaktualizowane, a pula meczu przeliczona.' });
   } catch (err) {
-    res.status(500).json({ error: 'Błąd zapisu typowania: ' + err.message });
+    await conn.rollback();
+    res.status(500).json({ error: 'Błąd wymuszenia typu: ' + err.message });
+  } finally {
+    conn.release();
   }
 });
 

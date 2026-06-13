@@ -5,7 +5,7 @@ const db = require('../config/db');
 const FLAG_MAP = {
   'Mexico': '🇲🇽', 'Poland': '🇵🇱', 'United States': '🇺🇸', 'Canada': '🇨🇦',
   'Argentina': '🇦🇷', 'Brazil': '🇧🇷', 'France': '🇫🇷', 'Germany': '🇩🇪',
-  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Spain': '🇪🇸', 'Netherlands': '🇳🇱', 'Portugal': '🇵🇹',
+  'England': '🏴', 'Spain': '🇪🇸', 'Netherlands': '🇳🇱', 'Portugal': '🇵🇹',
   'Belgium': '🇧🇪', 'Italy': '🇮🇹', 'Croatia': '🇭🇷', 'Morocco': '🇲🇦',
   'Japan': '🇯🇵', 'South Korea': '🇰🇷', 'Australia': '🇦🇺', 'Serbia': '🇷🇸',
   'Switzerland': '🇨🇭', 'Uruguay': '🇺🇾', 'Ecuador': '🇪🇨', 'Senegal': '🇸🇳',
@@ -14,33 +14,42 @@ const FLAG_MAP = {
   'Honduras': '🇭🇳', 'Chile': '🇨🇱', 'Colombia': '🇨🇴', 'Venezuela': '🇻🇪',
   'Peru': '🇵🇪', 'Paraguay': '🇵🇾', 'Bolivia': '🇧🇴', 'Turkey': '🇹🇷',
   'Ukraine': '🇺🇦', 'Romania': '🇷🇴', 'Hungary': '🇭🇺', 'Slovakia': '🇸🇰',
-  'Czech Republic': 'Czechia', 'Czechia': '🇨🇿', 'Denmark': '🇩🇰', 'Sweden': '🇸🇪',
+  'Czech Republic': '🇨🇿', 'Czechia': '🇨🇿', 'Denmark': '🇩🇰', 'Sweden': '🇸🇪',
   'Norway': '🇳🇴', 'Finland': '🇫🇮', 'Austria': '🇦🇹', 'Greece': '🇬🇷',
   'Algeria': '🇩🇿', 'Egypt': '🇪🇬', 'Nigeria': '🇳🇬', 'South Africa': '🇿🇦',
-  'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Ireland': '🇮🇪', 'New Zealand': '🇳🇿',
+  'Wales': '🏴', 'Scotland': '🏴', 'Ireland': '🇮🇪', 'New Zealand': '🇳🇿',
 };
 
 const API_BASE = process.env.FOOTBALL_API_URL || 'https://api.football-data.org/v4';
 const HEADERS = { 'X-Auth-Token': process.env.FOOTBALL_API_KEY };
 
 async function fetchAndSyncMatches() {
-  if (!process.env.FOOTBALL_API_KEY) return;
+  if (!process.env.FOOTBALL_API_KEY) {
+    console.log('[CRON] Brak FOOTBALL_API_KEY w pliku .env. Synchronizacja pominięta.');
+    return;
+  }
+  
   try {
     const { data } = await axios.get(`${API_BASE}/competitions/WC/matches`, { headers: HEADERS });
     const matches = data.matches;
 
-    for (const m of matches) {
+    // Pobieramy z bazy mecze sfinalizowane przez admina, by ich nie modyfikować
+    const [finalized] = await db.execute("SELECT api_id FROM matches WHERE status='finished'");
+    const finalizedIds = new Set(finalized.map(m => m.api_id));
 
-         // IGNORUJ MECZE BEZ DRUŻYN
-    if (!m.homeTeam?.name || !m.awayTeam?.name) {
-        console.log("[CRON] Pomijam mecz bez drużyn:", m.id);
-        continue;
-    }
+    for (const m of matches) {
+      // Ignoruj mecze bez przypisanych zespołów
+      if (!m.homeTeam?.name || !m.awayTeam?.name) continue;
+      
+      // Jeśli mecz został już ręcznie zamrożony i rozliczony — pomijamy
+      if (finalizedIds.has(m.id)) continue;
+
       const homeTeam = m.homeTeam.name;
       const awayTeam = m.awayTeam.name;
       const matchDate = new Date(m.utcDate);
-      // Polska strefa czasowa: +2 w lato
-      const deadline = new Date(matchDate.getTime() - 2 * 60 * 60 * 1000);
+      
+      // Dynamiczny termin zamknięcia typów: 5 minut przed oficjalnym gwizdkiem
+      const deadline = new Date(matchDate.getTime() - 5 * 60 * 1000);
 
       let status = 'upcoming';
       if (m.status === 'SCHEDULED' || m.status === 'TIMED') {
@@ -50,7 +59,6 @@ async function fetchAndSyncMatches() {
       if (m.status === 'IN_PLAY' || m.status === 'PAUSED') status = 'live';
       if (m.status === 'FINISHED') status = 'finished';
 
-      // Mapuj fazę
       const stageMap = {
         'GROUP_STAGE': 'group', 'LAST_16': 'r16', 'QUARTER_FINALS': 'qf',
         'SEMI_FINALS': 'sf', 'THIRD_PLACE': 'third', 'FINAL': 'final'
@@ -61,7 +69,6 @@ async function fetchAndSyncMatches() {
       const scoreHome = m.score?.fullTime?.home;
       const scoreAway = m.score?.fullTime?.away;
 
-      // Zbierz strzelców bramek
       const scorers = (m.goals || []).map(g => ({
         name: g.scorer?.name || '?',
         minute: g.minute,
@@ -69,91 +76,120 @@ async function fetchAndSyncMatches() {
         team: g.team?.name
       }));
 
+      const scorersJson = JSON.stringify(scorers);
+
       await db.execute(`
         INSERT INTO matches (api_id, phase, group_name, home_team, home_flag, away_team, away_flag,
           match_date, deadline, status, score_home, score_away, scorers)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
-          status=VALUES(status), score_home=VALUES(score_home), score_away=VALUES(score_away),
-          scorers=VALUES(scorers), updated_at=NOW()
+          status = VALUES(status), 
+          score_home = VALUES(score_home), 
+          score_away = VALUES(score_away),
+          scorers = ?, 
+          updated_at = NOW()
       `, [
         m.id, phase, groupName,
         homeTeam, FLAG_MAP[homeTeam] || '🏴',
         awayTeam, FLAG_MAP[awayTeam] || '🏴',
         matchDate, deadline, status,
         scoreHome ?? null, scoreAway ?? null,
-        JSON.stringify(scorers)
+        scorersJson, // Wstrzykujemy bezpośrednio do zapytania dla UPDATE
+        scorersJson
       ]);
     }
 
-    // Generuj opisy AI dla świeżo zakończonych meczów bez opisu
+    // Wywołanie modułu AI
     await generateMissingSummaries();
 
-    console.log(`[CRON] Zsynchronizowano ${matches.length} meczów`);
+    console.log(`[CRON] Pomyślnie zsynchronizowano ${matches.length} meczów.`);
   } catch (err) {
-    console.error('[CRON] Błąd sync meczów:', err.message);
+    console.error('[CRON] Błąd krytyczny synchronizacji meczów:', err.message);
   }
 }
 
 async function generateMissingSummaries() {
   if (!process.env.ANTHROPIC_API_KEY) return;
-  const [rows] = await db.execute(
-    `SELECT * FROM matches WHERE status='finished' AND summary_ai IS NULL
-     AND score_home IS NOT NULL LIMIT 3`
-  );
-  for (const match of rows) {
-    try {
-      const scorers = JSON.parse(match.scorers || '[]');
-      const scorerText = scorers.length
-        ? scorers.map(s => `${s.name} (${s.minute}', ${s.team})`).join(', ')
-        : 'brak danych o strzelcach';
+  
+  try {
+    const [rows] = await db.execute(
+      `SELECT * FROM matches WHERE status='finished' AND summary_ai IS NULL
+       AND score_home IS NOT NULL LIMIT 2`
+    );
 
-      const prompt = `Napisz krótkie podsumowanie meczu piłkarskiego po polsku (3-4 zdania).
+    for (const match of rows) {
+      try {
+        const scorers = JSON.parse(match.scorers || '[]');
+        const scorerText = scorers.length
+          ? scorers.map(s => `${s.name} (${s.minute}', ${s.team})`).join(', ')
+          : 'brak danych o strzelcach';
+
+        const prompt = `Napisz krótkie podsumowanie meczu piłkarskiego po polsku (maksymalnie 3-4 zdania).
 Mecz: ${match.home_team} ${match.score_home}:${match.score_away} ${match.away_team}
 Strzelcy: ${scorerText}
-Napisz o przebiegu meczu, bramkach i jednej ciekawej akcji. Styl: sportowy, emocjonujący, zwięzły.`;
+Napisz o przebiegu meczu, bramkach i dynamice spotkania. Styl: sportowy, zwięzły, emocjonujący.`;
 
-      const response = await axios.post(
-        'https://api.anthropic.com/v1/messages',
-        { model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: prompt }] },
-        { headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' } }
-      );
+        const response = await axios.post(
+          'https://api.anthropic.com/v1/messages',
+          { 
+            model: 'claude-3-5-sonnet-20241022', 
+            max_tokens: 300, 
+            messages: [{ role: 'user', content: prompt }] 
+          },
+          { 
+            headers: { 
+              'x-api-key': process.env.ANTHROPIC_API_KEY, 
+              'anthropic-version': '2023-06-01', 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
 
-      const summary = response.data.content[0].text;
-      await db.execute('UPDATE matches SET summary_ai=? WHERE id=?', [summary, match.id]);
-      console.log(`[AI] Opis wygenerowany dla meczu ${match.home_team} vs ${match.away_team}`);
-    } catch (e) {
-      console.error('[AI] Błąd generowania opisu:', e.message);
+        const summary = response.data.content[0].text;
+        await db.execute('UPDATE matches SET summary_ai=? WHERE id=?', [summary, match.id]);
+        console.log(`[AI] Wygenerowano opis dla spotkania: ${match.home_team} vs ${match.away_team}`);
+      } catch (e) {
+        console.error(`[AI] Błąd cząstkowy dla meczu ID ${match.id}:`, e.response?.data || e.message);
+      }
     }
+  } catch (err) {
+    console.error('[AI] Błąd globalny generatora podsumowań:', err.message);
   }
 }
 
 function startCron() {
-  // Co 60 sekund — aktualizuj wyniki na żywo
-  cron.schedule('* * * * *', fetchAndSyncMatches);
+  // Synchronizacja danych z zewnętrznym API co 2 minuty
+  cron.schedule('*/2 * * * *', fetchAndSyncMatches);
 
-  // Co 2 godziny — otwórz typowanie dla nadchodzących meczów
+  // Co 2 godziny — otwarcie meczów zbliżających się do okna 48-godzinnego
   cron.schedule('0 */2 * * *', async () => {
-    await db.execute(`
-      UPDATE matches SET status='open'
-      WHERE status='upcoming'
-      AND match_date <= DATE_ADD(NOW(), INTERVAL 48 HOUR)
-      AND match_date > NOW()
-    `);
+    try {
+      await db.execute(`
+        UPDATE matches SET status='open'
+        WHERE status='upcoming'
+        AND match_date <= DATE_ADD(NOW(), INTERVAL 48 HOUR)
+        AND match_date > NOW()
+      `);
+    } catch (err) {
+      console.error('[CRON] Błąd otwierania meczów:', err.message);
+    }
   });
 
-  // Co 5 minut — zamknij typowanie dla meczów bliskich startu
+  // Co 5 minut — automatyczne zabezpieczenie zamykania spóźnionych typowań
   cron.schedule('*/5 * * * *', async () => {
-    await db.execute(`
-      UPDATE matches SET status='live'
-      WHERE status='open' AND match_date <= NOW()
-    `);
-    // Sprawdź graczy którzy nie wysłali typów — ustaw pauzę
-    // (uproszczona wersja: admin może to też robić ręcznie)
+    try {
+      await db.execute(`
+        UPDATE matches SET status='live'
+        WHERE status='open' AND match_date <= NOW()
+      `);
+    } catch (err) {
+      console.error('[CRON] Błąd wymuszenia statusu live:', err.message);
+    }
   });
 
-  console.log('[CRON] Zadania zaplanowane. Pierwsza synchronizacja za chwilę...');
-  setTimeout(fetchAndSyncMatches, 5000); // pierwsze pobranie po 5s od startu
+  console.log('[CRON] Wszystkie zadania harmonogramu zostały załadowane.');
+  // Opóźnienie startowe (3 sekundy) zapobiegające blokadom połączeń przy restarcie node
+  setTimeout(fetchAndSyncMatches, 3000);
 }
 
 module.exports = { startCron, fetchAndSyncMatches };
