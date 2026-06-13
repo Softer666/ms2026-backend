@@ -114,7 +114,7 @@ router.post('/matches/:id/result', async (req, res) => {
       [score_home, score_away, matchId]
     );
 
-    // 2. Szukamy zwycięzców (porównanie liczb TINYINT działa teraz w 100% poprawnie)
+    // 2. Szukamy zwycięzców
     const [winners] = await conn.execute(
       `SELECT b.*, u.is_child FROM bets b JOIN users u ON u.id=b.user_id
        WHERE b.match_id=? AND b.score_home=? AND b.score_away=?`,
@@ -122,7 +122,7 @@ router.post('/matches/:id/result', async (req, res) => {
     );
 
     const [[match]] = await conn.execute(
-      'SELECT pool, carry_over FROM matches WHERE id=?', [matchId]
+      'SELECT pool, carry_over, match_date FROM matches WHERE id=?', [matchId]
     );
     const totalPool = parseFloat(match.pool) + parseFloat(match.carry_over || 0);
 
@@ -134,14 +134,21 @@ router.post('/matches/:id/result', async (req, res) => {
       carryNext = parseFloat((totalPool - share * winners.length).toFixed(2));
 
       for (const w of winners) {
+        // Aktualizacja kuponu
         await conn.execute(
           'UPDATE bets SET is_hit=1, win_amount=? WHERE id=?', [share, w.id]
         );
+        // Aktualizacja statystyki wygranych sumarycznie
         await conn.execute(
           'UPDATE users SET winnings=winnings+? WHERE id=?', [share, w.user_id]
         );
+        // NAPRAWA: Zwiększamy fizyczny stan konta gracza (w aplikacji dopisujemy to do cash_in / portfela)
+        await conn.execute(
+          'UPDATE users SET cash_in = cash_in + ? WHERE id=?', [share, w.user_id]
+        );
       }
     } else {
+      // Jeśli nikt nie wygrał, cała pula staje się kumulacją
       carryNext = totalPool;
     }
 
@@ -152,13 +159,14 @@ router.post('/matches/:id/result', async (req, res) => {
       [matchId, score_home, score_away]
     );
 
-    // 5. Przeniesienie ewentualnego carry_over na kolejny chronologicznie mecz
+    // 5. Przeniesienie ewentualnego carry_over na kolejny chronologicznie mecz (Bezpieczniejsza kwerenda)
     if (carryNext > 0) {
       await conn.execute(
-        `UPDATE matches SET carry_over=carry_over+?
-         WHERE match_date > (SELECT match_date FROM (SELECT match_date FROM matches WHERE id=?) t)
-         AND status IN ('upcoming','open') ORDER BY match_date ASC LIMIT 1`,
-        [carryNext, matchId]
+        `UPDATE matches SET carry_over = carry_over + ?
+         WHERE (match_date > ? OR (match_date = ? AND id > ?))
+         AND status IN ('upcoming','open') 
+         ORDER BY match_date ASC, id ASC LIMIT 1`,
+        [carryNext, match.match_date, match.match_date, matchId]
       );
     }
 
