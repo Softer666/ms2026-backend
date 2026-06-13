@@ -19,7 +19,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // <-- DODANO 'PATCH'
   credentials: true,
   optionsSuccessStatus: 200
 };
