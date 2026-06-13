@@ -93,6 +93,33 @@ router.post('/payments', async (req, res) => {
   }
 });
 
+// PATCH /api/admin/matches/:id — Zwykła edycja parametrów meczu (status, pula, wyniki)
+router.patch('/matches/:id', async (req, res) => {
+  const matchId = req.params.id;
+  const { status, pool, score_home, score_away } = req.body;
+
+  try {
+    // Aktualizujemy dane meczu w bazie
+    await db.execute(
+      `UPDATE matches 
+       SET status = ?, pool = ?, score_home = ?, score_away = ? 
+       WHERE id = ?`,
+      [
+        status, 
+        pool, 
+        score_home !== undefined ? score_home : null, 
+        score_away !== undefined ? score_away : null, 
+        matchId
+      ]
+    );
+
+    res.json({ ok: true, message: 'Mecz został zaktualizowany pomyślnie.' });
+  } catch (err) {
+    console.error('[ADMIN PATCH MATCH ERROR]:', err);
+    res.status(500).json({ error: 'Błąd bazy danych podczas edycji meczu: ' + err.message });
+  }
+});
+
 // POST /api/admin/matches/:id/result — Wpisz wynik meczu i rozlicz pulę
 router.post('/matches/:id/result', async (req, res) => {
   const score_home = parseInt(req.body.score_home, 10);
