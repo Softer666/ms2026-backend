@@ -180,6 +180,25 @@ router.post('/matches/:id/result', async (req, res) => {
     );
 
     // 4. Przeniesienie kumulacji na kolejny mecz jeśli carryNext > 0...
+    // 4. Jeśli mamy kumulację, szukamy NAJBLIŻSZEGO meczu, który nie został jeszcze rozliczony
+    if (carryNext > 0) {
+      const [nextMatches] = await conn.execute(
+        `SELECT id FROM matches 
+         WHERE id != ? AND status NOT IN ("ended", "finished") 
+         ORDER BY match_date ASC LIMIT 1`,
+        [matchId]
+      );
+      
+      if (nextMatches.length > 0) {
+        await conn.execute(
+          'UPDATE matches SET pool = pool + ? WHERE id = ?',
+          [carryNext, nextMatches[0].id]
+        );
+        console.log(`[JACKPOT] Przeniesiono kumulację ${carryNext} zł na kolejny mecz ID: ${nextMatches[0].id}`);
+      } else {
+        console.log('[JACKPOT] Brak kolejnych meczów do przekazania kumulacji.');
+      }
+    }
     // 5. Zmiana statusu meczu na 'ended' i zapisanie oficjalnego wyniku...
 
     await conn.commit();
