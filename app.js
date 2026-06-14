@@ -49,11 +49,16 @@ app.get('/api/ranking', auth, async (req, res) => {
         u.name, 
         u.is_child, 
         u.is_paused,
-        u.cash_in,
         u.winnings,
         COALESCE((SELECT COUNT(*) FROM bets WHERE user_id = u.id), 0) AS total_bets,
         COALESCE((SELECT COUNT(*) FROM bets WHERE user_id = u.id AND is_hit = 1), 0) AS hits,
-        COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0) AS total_due
+        COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0) AS total_stakes,
+        COALESCE((SELECT SUM(amount) FROM payments WHERE user_id = u.id), 0) AS total_paid_in,
+        ROUND(
+          COALESCE((SELECT SUM(amount) FROM payments WHERE user_id = u.id), 0)
+          - COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0)
+          + u.winnings,
+        2) AS wallet
       FROM users u
       WHERE u.role = 'user'
       GROUP BY u.id
@@ -63,6 +68,28 @@ app.get('/api/ranking', auth, async (req, res) => {
   } catch (err) {
     console.error('Błąd pobierania rankingu:', err);
     res.status(500).json({ error: 'Błąd serwera podczas pobierania rankingu' });
+  }
+});
+
+// Portfel zalogowanego użytkownika (do nagłówka)
+app.get('/api/me/wallet', auth, async (req, res) => {
+  try {
+    const [[row]] = await db.execute(`
+      SELECT
+        u.winnings,
+        COALESCE((SELECT SUM(amount) FROM payments WHERE user_id = u.id), 0) AS total_paid_in,
+        COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0) AS total_stakes,
+        ROUND(
+          COALESCE((SELECT SUM(amount) FROM payments WHERE user_id = u.id), 0)
+          - COALESCE((SELECT SUM(stake) FROM bets WHERE user_id = u.id), 0)
+          + u.winnings,
+        2) AS wallet
+      FROM users u WHERE u.id = ?
+    `, [req.user.id]);
+    res.json(row);
+  } catch (err) {
+    console.error('Błąd pobierania portfela:', err);
+    res.status(500).json({ error: 'Błąd serwera' });
   }
 });
 

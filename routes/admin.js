@@ -153,56 +153,63 @@ router.post('/matches/:id/result', async (req, res) => {
     let carryNext = 0;
 
     if (winners.length > 0) {
-      // Dzielimy pulę równo na zwycięzców (40 zł / 5 osób = 8 zł)
-      const share = totalPool / winners.length;
+      // Zaokrąglamy w dół do pełnych złotych — reszta idzie do kolejnej puli
+      const shareRaw = totalPool / winners.length;
+      const share = Math.floor(shareRaw);           // np. 80/3 = 26 zł każdy
+      carryNext = Math.round((totalPool - share * winners.length) * 100) / 100; // 80 - 78 = 2 zł
 
       for (const w of winners) {
-        // AKTUALIZACJA FINANSÓW GRACZA:
-        await conn.execute('UPDATE users SET cash_in = cash_in + ? WHERE id = ?', [share, w.user_id]);
-        
-        // --- TUTAJ JEST BRAKUJĄCY ELEMENT KODU (RANKING I STATUS KUPONU) ---
-        // System musiał oznaczyć kupon jako trafiony w tabeli `bets`, żeby ranking ruszył!
+        // Dodajemy wygraną do winnings (nie cash_in — to osobna kolumna rozliczeń)
+        await conn.execute('UPDATE users SET winnings = winnings + ? WHERE id = ?', [share, w.user_id]);
         await conn.execute(
           'UPDATE bets SET is_hit = 1, win_amount = ? WHERE id = ?',
           [share, w.id]
         );
-        await conn.execute('UPDATE bets SET is_hit = 0, win_amount = 0 WHERE match_id = ? AND is_hit IS NULL', [matchId]);
       }
     } else {
-      // Jeśli nikt nie trafił, pula przechodzi dalej (Jackpot)
+      // Nikt nie trafił — cała pula przechodzi jako kumulacja
       carryNext = totalPool;
     }
 
-    // 3. Oznaczamy wszystkie pozostałe (nietrafione) zakłady w tym meczu jako przegrane (is_hit = 0)
+    // 3. Oznaczamy wszystkie pozostałe (nietrafione) zakłady jako przegrane — POZA pętlą
     await conn.execute(
       'UPDATE bets SET is_hit = 0, win_amount = 0 WHERE match_id = ? AND is_hit IS NULL',
       [matchId]
     );
 
-    // 4. Przeniesienie kumulacji na kolejny mecz jeśli carryNext > 0...
-    // 4. Jeśli mamy kumulację, szukamy NAJBLIŻSZEGO meczu, który nie został jeszcze rozliczony
+    // 4. Jeśli jest reszta/kumulacja — przechodzi do najbliższego nierozliczonego meczu
     if (carryNext > 0) {
       const [nextMatches] = await conn.execute(
         `SELECT id FROM matches 
-         WHERE id != ? AND status NOT IN ("ended", "finished") 
+         WHERE id != ? AND status NOT IN ('finished') 
          ORDER BY match_date ASC LIMIT 1`,
         [matchId]
       );
-      
       if (nextMatches.length > 0) {
         await conn.execute(
-          'UPDATE matches SET pool = pool + ? WHERE id = ?',
-          [carryNext, nextMatches[0].id]
+          'UPDATE matches SET carry_over = carry_over + ?, pool = pool + ? WHERE id = ?',
+          [carryNext, carryNext, nextMatches[0].id]
         );
-        console.log(`[JACKPOT] Przeniesiono kumulację ${carryNext} zł na kolejny mecz ID: ${nextMatches[0].id}`);
+        console.log(`[JACKPOT] Przeniesiono ${carryNext} zł na mecz ID: ${nextMatches[0].id}`);
       } else {
         console.log('[JACKPOT] Brak kolejnych meczów do przekazania kumulacji.');
       }
     }
-    // 5. Zmiana statusu meczu na 'ended' i zapisanie oficjalnego wyniku...
+
+    // 5. Zamknięcie meczu — ustawiamy status i oficjalny wynik
+    await conn.execute(
+      'UPDATE matches SET status = "finished", score_home = ?, score_away = ? WHERE id = ?',
+      [score_home, score_away, matchId]
+    );
+
+    // 6. Zapis do historii rozliczeń
+    await conn.execute(
+      'INSERT INTO pool_distributions (match_id, total_pool, winners, carry_next) VALUES (?,?,?,?)',
+      [matchId, totalPool, JSON.stringify(winners.map(w => ({ user_id: w.user_id, amount: Math.floor(totalPool / winners.length) }))), carryNext]
+    );
 
     await conn.commit();
-    res.json({ ok: true, winners: winners.length, totalPool, carryNext });
+    res.json({ ok: true, winners: winners.length, totalPool, share: winners.length > 0 ? Math.floor(totalPool / winners.length) : 0, carryNext });
 
   } catch (err) {
     await conn.rollback();
@@ -317,6 +324,71 @@ router.post('/bets/force', async (req, res) => {
     res.status(500).json({ error: 'Błąd wymuszenia typu: ' + err.message });
   } finally {
     conn.release();
+  }
+});
+
+// PATCH /api/admin/users/:id/wallet — Ręczna korekta portfela gracza przez admina
+router.patch('/users/:id/wallet', async (req, res) => {
+  const userId = req.params.id;
+  const { winnings, cash_in, note } = req.body;
+
+  const fields = [];
+  const vals = [];
+  if (winnings !== undefined) { fields.push('winnings = ?'); vals.push(parseFloat(winnings)); }
+  if (cash_in !== undefined)  { fields.push('cash_in = ?');  vals.push(parseFloat(cash_in)); }
+
+  if (!fields.length) return res.status(400).json({ error: 'Brak pól do aktualizacji (winnings, cash_in)' });
+
+  vals.push(userId);
+  try {
+    await db.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ? AND role != 'admin'`, vals);
+    console.log(`[ADMIN KOREKTA] User ${userId} — ${note || 'brak notatki'}: ${JSON.stringify(req.body)}`);
+    res.json({ ok: true, message: 'Portfel gracza zaktualizowany.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd korekty portfela: ' + err.message });
+  }
+});
+
+// PATCH /api/admin/bets/:id/correction — Ręczna korekta wygranej na kuponie
+router.patch('/bets/:id/correction', async (req, res) => {
+  const betId = req.params.id;
+  const { win_amount, is_hit } = req.body;
+
+  if (win_amount === undefined && is_hit === undefined)
+    return res.status(400).json({ error: 'Podaj win_amount i/lub is_hit' });
+
+  const fields = [];
+  const vals = [];
+  if (win_amount !== undefined) { fields.push('win_amount = ?'); vals.push(parseFloat(win_amount)); }
+  if (is_hit !== undefined)     { fields.push('is_hit = ?');     vals.push(parseInt(is_hit, 10)); }
+  vals.push(betId);
+
+  try {
+    await db.execute(`UPDATE bets SET ${fields.join(', ')} WHERE id = ?`, vals);
+    res.json({ ok: true, message: 'Kupon zaktualizowany.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd korekty kuponu: ' + err.message });
+  }
+});
+
+// PATCH /api/admin/matches/:id/pool — Ręczna korekta puli meczu
+router.patch('/matches/:id/pool', async (req, res) => {
+  const matchId = req.params.id;
+  const { pool, carry_over } = req.body;
+
+  const fields = [];
+  const vals = [];
+  if (pool !== undefined)       { fields.push('pool = ?');       vals.push(parseFloat(pool)); }
+  if (carry_over !== undefined) { fields.push('carry_over = ?'); vals.push(parseFloat(carry_over)); }
+
+  if (!fields.length) return res.status(400).json({ error: 'Podaj pool i/lub carry_over' });
+
+  vals.push(matchId);
+  try {
+    await db.execute(`UPDATE matches SET ${fields.join(', ')} WHERE id = ?`, vals);
+    res.json({ ok: true, message: 'Pula meczu zaktualizowana.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd korekty puli: ' + err.message });
   }
 });
 
