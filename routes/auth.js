@@ -87,3 +87,27 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+// POST /api/auth/change-password — Zmiana własnego hasła przez zalogowanego użytkownika
+const { auth } = require('../middleware/auth');
+router.post('/change-password', auth, async (req, res) => {
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password)
+    return res.status(400).json({ error: 'Podaj aktualne i nowe hasło' });
+  if (new_password.length < 6)
+    return res.status(400).json({ error: 'Nowe hasło musi mieć minimum 6 znaków' });
+
+  try {
+    const [rows] = await db.execute('SELECT password FROM users WHERE id = ?', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Użytkownik nie istnieje' });
+
+    const ok = await bcrypt.compare(current_password, rows[0].password);
+    if (!ok) return res.status(400).json({ error: 'Aktualne hasło jest nieprawidłowe' });
+
+    const hash = await bcrypt.hash(new_password, 10);
+    await db.execute('UPDATE users SET password = ? WHERE id = ?', [hash, req.user.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[CHANGE PASSWORD ERROR]:', err);
+    res.status(500).json({ error: 'Błąd serwera podczas zmiany hasła' });
+  }
+});

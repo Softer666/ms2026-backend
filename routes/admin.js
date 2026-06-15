@@ -392,4 +392,27 @@ router.patch('/matches/:id/pool', async (req, res) => {
   }
 });
 
+// PATCH /api/admin/users/:id/password — Zmiana hasła gracza przez admina
+router.patch('/users/:id/password', async (req, res) => {
+  const userId = req.params.id;
+  const { password } = req.body;
+
+  if (!password || password.length < 6)
+    return res.status(400).json({ error: 'Hasło musi mieć minimum 6 znaków' });
+
+  try {
+    const [rows] = await db.execute('SELECT id, role FROM users WHERE id = ?', [userId]);
+    if (!rows.length) return res.status(404).json({ error: 'Użytkownik nie istnieje' });
+    if (rows[0].role === 'admin') return res.status(403).json({ error: 'Nie można zmieniać hasła konta administratora' });
+
+    const hash = await bcrypt.hash(password, 10);
+    await db.execute('UPDATE users SET password = ? WHERE id = ?', [hash, userId]);
+
+    console.log(`[ADMIN] Zmiana hasła dla user_id=${userId} przez admin_id=${req.user.id}`);
+    res.json({ ok: true, message: 'Hasło zostało zmienione.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Błąd zmiany hasła: ' + err.message });
+  }
+});
+
 module.exports = router;
