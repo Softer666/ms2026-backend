@@ -102,6 +102,9 @@ async function fetchAndSyncMatches() {
     // Wywołanie modułu AI
     await generateMissingSummaries();
 
+    // Przepisanie zwycięzców do kolejnych rund
+    await advanceBracketWinners();
+
     console.log(`[CRON] Pomyślnie zsynchronizowano ${matches.length} meczów.`);
   } catch (err) {
     console.error('[CRON] Błąd krytyczny synchronizacji meczów:', err.message);
@@ -154,6 +157,118 @@ Napisz o przebiegu meczu, bramkach i dynamice spotkania. Styl: sportowy, zwięz�
     }
   } catch (err) {
     console.error('[AI] Błąd globalny generatora podsumowań:', err.message);
+  }
+}
+
+// ============================================================
+// PRZEPISYWANIE ZWYCIĘZCÓW DO KOLEJNYCH RUND
+// Logika: po zakończeniu meczu fazy pucharowej, zwycięzca
+// trafia automatycznie do odpowiedniego miejsca w kolejnym meczu.
+//
+// Kolejność meczów wg football-data.org (api_id / pozycja w drabince):
+//   r16:   mecze 1-8   (posortowane wg match_date)
+//   qf:    mecze 1-4   (zwycięzca r16[0]+r16[1] → qf[0], itd.)
+//   sf:    mecze 1-2   (zwycięzca qf[0]+qf[1] → sf[0], itd.)
+//   final: zwycięzcy sf[0]+sf[1]
+//   third: przegrani sf[0]+sf[1]
+// ============================================================
+async function advanceBracketWinners() {
+  try {
+    // Pobierz wszystkie mecze fazy pucharowej posortowane wg daty
+    const [knockout] = await db.execute(`
+      SELECT id, api_id, phase, home_team, away_team, score_home, score_away,
+             home_flag, away_flag, status, match_date
+      FROM matches
+      WHERE phase IN ('r16','qf','sf','final','third')
+      ORDER BY match_date ASC
+    `);
+
+    const byPhase = (p) => knockout.filter(m => m.phase === p);
+    const r16   = byPhase('r16');
+    const qf    = byPhase('qf');
+    const sf    = byPhase('sf');
+    const fin   = byPhase('final');
+    const third = byPhase('third');
+
+    // Wyznacz zwycięzcę meczu (null jeśli nie zakończony lub remis po 90 min — dogrywka/karne obsługiwane przez API)
+    const winner = (m) => {
+      if (!m || m.status !== 'finished') return null;
+      if (m.score_home === null || m.score_away === null) return null;
+      if (m.score_home > m.score_away) return { name: m.home_team, flag: m.home_flag };
+      if (m.score_away > m.score_home) return { name: m.away_team, flag: m.away_flag };
+      return null; // remis — poczekaj na wynik z dogrywki/karnych (API zaktualizuje score)
+    };
+    const loser = (m) => {
+      if (!m || m.status !== 'finished') return null;
+      if (m.score_home === null || m.score_away === null) return null;
+      if (m.score_home > m.score_away) return { name: m.away_team, flag: m.away_flag };
+      if (m.score_away > m.score_home) return { name: m.home_team, flag: m.home_flag };
+      return null;
+    };
+
+    // Przepisz drużynę do konkretnego meczu i slotu (home/away)
+    const advance = async (targetMatch, slot, team) => {
+      if (!targetMatch || !team) return;
+      const col = slot === 'home' ? 'home_team' : 'away_team';
+      const flagCol = slot === 'home' ? 'home_flag' : 'away_flag';
+      // Nie nadpisuj jeśli już jest ta sama drużyna
+      const current = slot === 'home' ? targetMatch.home_team : targetMatch.away_team;
+      if (current === team.name) return;
+      await db.execute(
+        `UPDATE matches SET ${col}=?, ${flagCol}=? WHERE id=?`,
+        [team.name, team.flag, targetMatch.id]
+      );
+      console.log(`[BRACKET] ${team.name} → ${col} meczu ID ${targetMatch.id} (${targetMatch.phase})`);
+    };
+
+    // ── r16 → qf (pary: 0+1→qf[0]home, 2+3→qf[0]away NIE — poprawna logika:)
+    // Para meczów r16 wyłania jednego gracza do qf:
+    // r16[0] winner → qf[0] home
+    // r16[1] winner → qf[0] away
+    // r16[2] winner → qf[1] home
+    // r16[3] winner → qf[1] away
+    // r16[4] winner → qf[2] home  (prawa strona drabinki)
+    // r16[5] winner → qf[2] away
+    // r16[6] winner → qf[3] home
+    // r16[7] winner → qf[3] away
+    const r16pairs = [[0,'home'],[1,'away'],[2,'home'],[3,'away'],[4,'home'],[5,'away'],[6,'home'],[7,'away']];
+    for (let i = 0; i < r16.length; i++) {
+      const w = winner(r16[i]);
+      if (!w) continue;
+      const qfIdx = Math.floor(i / 2);
+      const slot = i % 2 === 0 ? 'home' : 'away';
+      if (qf[qfIdx]) await advance(qf[qfIdx], slot, w);
+    }
+
+    // ── qf → sf
+    // qf[0] winner → sf[0] home
+    // qf[1] winner → sf[0] away
+    // qf[2] winner → sf[1] home
+    // qf[3] winner → sf[1] away
+    for (let i = 0; i < qf.length; i++) {
+      const w = winner(qf[i]);
+      if (!w) continue;
+      const sfIdx = Math.floor(i / 2);
+      const slot = i % 2 === 0 ? 'home' : 'away';
+      if (sf[sfIdx]) await advance(sf[sfIdx], slot, w);
+    }
+
+    // ── sf → final i third
+    for (let i = 0; i < sf.length; i++) {
+      const w = winner(sf[i]);
+      const l = loser(sf[i]);
+      if (fin[0]) {
+        const slot = i === 0 ? 'home' : 'away';
+        if (w) await advance(fin[0], slot, w);
+      }
+      if (third[0]) {
+        const slot = i === 0 ? 'home' : 'away';
+        if (l) await advance(third[0], slot, l);
+      }
+    }
+
+  } catch (err) {
+    console.error('[BRACKET] Błąd przepisywania zwycięzców:', err.message);
   }
 }
 
