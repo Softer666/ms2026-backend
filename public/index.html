@@ -186,6 +186,110 @@ input:focus,select:focus{outline:none;border-color:var(--green)}
   .match-teams{gap:6px}
   .flag{font-size:22px}
 }
+/* --- DRABINKA --- */
+:root{
+  --pk-outer:var(--bg2);
+  --pk-card:var(--bg3);
+  --pk-card-bdr:var(--border);
+  --pk-card-done-bdr:var(--green);
+  --pk-card-done-bg:var(--green-l);
+  --pk-divider:var(--border);
+  --pk-tname:var(--text);
+  --pk-score:var(--text2);
+  --pk-score-w:var(--green);
+  --pk-win-bg:var(--green-l);
+  --pk-conn:var(--border2);
+  --pk-label:var(--text3);
+  --pk-champ-bg:var(--gold-l);
+  --pk-champ-bdr:var(--gold);
+  --pk-champ-txt:var(--gold);
+  --pk-tbd-bg:var(--bg2);
+}
+[data-theme="dark"]{
+  --pk-outer:#0A1220;
+  --pk-card:#0D1E35;
+  --pk-card-bdr:#1E3352;
+  --pk-card-done-bdr:#1A4A2A;
+  --pk-card-done-bg:#0A2A1A;
+  --pk-divider:#1A2D44;
+  --pk-tname:#C8D8F0;
+  --pk-score:#7A9ABB;
+  --pk-score-w:#2ECC90;
+  --pk-win-bg:#0A2E1A;
+  --pk-conn:#1E3A5A;
+  --pk-label:#4A6A9A;
+  --pk-champ-bg:#1C1500;
+  --pk-champ-bdr:#C8900A;
+  --pk-champ-txt:#E8A820;
+  --pk-tbd-bg:#0D1828;
+}
+.pk-outer{background:var(--pk-outer);border-radius:12px;padding:14px 8px 18px;width:100%;box-sizing:border-box;overflow:hidden}
+/* Desktop — bez scrolla */
+.pk-row{display:flex;align-items:stretch;gap:0;width:100%}
+.pk-col{display:flex;flex-direction:column;flex:1;min-width:0}
+.pk-round-label{font-size:clamp(7px,0.8vw,9px);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pk-label);height:20px;display:flex;align-items:flex-end;padding:0 3px;margin-bottom:4px;white-space:nowrap;overflow:hidden}
+.pk-slots{display:flex;flex-direction:column;flex:1}
+.pk-slot{flex:1;display:flex;flex-direction:column;justify-content:center;padding:3px 2px}
+.pk-card{background:var(--pk-card);border:1px solid var(--pk-card-bdr);border-radius:6px;overflow:hidden;position:relative;transition:border-color .2s,box-shadow .2s;width:100%}
+.pk-card:hover{border-color:var(--green)}
+.pk-card.pk-done{border-color:var(--pk-card-done-bdr);background:var(--pk-card-done-bg)}
+.pk-card.pk-live{border-color:var(--gold);box-shadow:0 0 8px rgba(186,117,23,.25);animation:blink 1.5s infinite}
+.pk-card.pk-tbd{background:var(--pk-tbd-bg);opacity:.5}
+.pk-team{display:flex;align-items:center;gap:3px;padding:4px 5px;min-height:24px;transition:background .15s}
+.pk-team:first-of-type{border-bottom:1px solid var(--pk-divider)}
+.pk-team-r{flex-direction:row-reverse}
+.pk-win{background:var(--pk-win-bg)}
+.pk-tname{font-size:clamp(8px,0.85vw,11px);font-weight:500;color:var(--pk-tname);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.2}
+.pk-tname-w{color:var(--pk-score-w);font-weight:700}
+.pk-flag-wrap{display:flex;align-items:center;flex-shrink:0}
+.pk-flag-wrap img{height:12px;width:17px;border-radius:2px;object-fit:cover}
+.pk-score{font-family:monospace;font-weight:700;font-size:clamp(9px,0.85vw,12px);color:var(--pk-score);min-width:12px;text-align:center;flex-shrink:0}
+.pk-score-w{color:var(--pk-score-w)}
+.pk-team-r .pk-score{order:-1}
+.pk-live-pill{position:absolute;top:1px;right:3px;background:var(--gold);color:#fff;font-size:6px;font-weight:700;padding:1px 3px;border-radius:6px;display:flex;align-items:center;gap:2px}
+.pk-ldot{width:3px;height:3px;background:#fff;border-radius:50%;animation:blink 1s infinite}
+/* Łączniki */
+.pk-conn{display:flex;flex-direction:column;width:10px;flex-shrink:0;margin-top:24px}
+.pk-conn-pair{display:flex;flex-direction:column;flex:1}
+.pk-cline{flex:1;border-color:var(--pk-conn)}
+.pk-ct{border-right:1.5px solid;border-top:1.5px solid;border-radius:0 3px 0 0}
+.pk-cb{border-right:1.5px solid;border-bottom:1.5px solid;border-radius:0 0 3px 0}
+.pk-cl.pk-ct{border-right:none;border-left:1.5px solid;border-radius:3px 0 0 0}
+.pk-cl.pk-cb{border-right:none;border-left:1.5px solid;border-radius:0 0 0 3px}
+/* Środek */
+.pk-center{display:flex;flex-direction:column;flex-shrink:0;width:clamp(120px,14vw,160px);align-items:center;padding:0 4px}
+.pk-final-wrap{width:100%;padding:2px 0}
+.pk-champion{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;padding:5px 8px;background:var(--pk-champ-bg);border:1px solid var(--pk-champ-bdr);border-radius:7px;min-height:30px;width:100%;box-sizing:border-box}
+.pk-champ-active{box-shadow:0 0 12px rgba(200,144,10,.2)}
+.pk-champ-name{font-size:clamp(9px,0.85vw,11px);font-weight:700;color:var(--pk-champ-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
+/* Mobile — układ pionowy */
+@media(max-width:700px){
+  .pk-row{flex-direction:column;gap:4px}
+  .pk-col{flex-direction:row;align-items:flex-start;gap:6px;margin-bottom:4px;flex:none}
+  .pk-round-label{width:68px;min-width:68px;flex-shrink:0;font-size:8px;padding-top:4px;height:auto;align-items:flex-start}
+  .pk-slots{flex-direction:row;flex-wrap:wrap;gap:4px;flex:1}
+  .pk-slot{flex:0 0 auto;width:calc(50% - 2px);padding:0;min-width:120px}
+  .pk-conn{display:none}
+  .pk-center{width:100%;padding:0;margin-bottom:4px;flex-direction:row;flex-wrap:wrap;gap:6px}
+  .pk-final-wrap{flex:1;min-width:130px;padding:0}
+  .pk-champion{margin-top:0;flex:1;min-width:110px}
+  .pk-tname{font-size:10px}
+}
+@media(max-width:420px){
+  .pk-slot{width:100%;min-width:0}
+  .pk-round-label{width:54px;min-width:54px}
+}
+
+/* --- PROFIL GRACZA --- */
+.player-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:14px}
+.player-stat{background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px;text-align:center}
+.player-stat-num{font-size:18px;font-weight:700}
+.player-stat-lbl{font-size:10px;color:var(--text2);margin-top:2px}
+.bet-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
+.bet-row:last-child{border-bottom:none}
+.rank-row-clickable{cursor:pointer;transition:background .15s}
+.rank-row-clickable:hover{background:var(--bg2)}
+
 /* --- STOPKA --- */
 .site-footer {
   margin-top: 3rem;
@@ -372,6 +476,7 @@ input:focus,select:focus{outline:none;border-color:var(--green)}
     <div class="tabs">
       <button class="tab active" onclick="UI.tab('mecze',this)"><i class="ti ti-ball-football"></i> Mecze</button>
       <button class="tab" onclick="UI.tab('ranking',this)"><i class="ti ti-trophy"></i> Ranking</button>
+      <button class="tab" onclick="UI.tab('drabinka',this)" id="bracketTab"><i class="ti ti-tournament"></i> Drabinka</button>
       <button class="tab" onclick="UI.tab('moje',this)"><i class="ti ti-list-check"></i> Moje typy</button>
       <button class="tab" onclick="UI.tab('zasady',this)"><i class="ti ti-info-circle"></i> Zasady</button>
       <button class="tab" id="adminTab" style="display:none" onclick="UI.tab('admin',this)"><i class="ti ti-settings"></i> Admin</button>
@@ -410,6 +515,13 @@ input:focus,select:focus{outline:none;border-color:var(--green)}
       <div class="cards" id="rankCards"></div>
       <table><thead><tr><th style="width:32px">Poz.</th><th>Gracz</th><th>Trafień</th><th>Typy</th><th>Portfel</th><th>Wygrane</th></tr></thead>
       <tbody id="rankTbody"></tbody></table>
+    </div>
+
+    <div id="drabinka" class="section">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-tournament" style="color:var(--green)"></i> Drabinka fazy pucharowej
+      </div>
+      <div id="bracketWrap"></div>
     </div>
 
     <div id="moje" class="section">
@@ -516,7 +628,7 @@ input:focus,select:focus{outline:none;border-color:var(--green)}
     <div class="footer-logo">SS</div>
     <div>
       <div class="footer-name">SofterStudio</div>
-      <div class="footer-version">v.0.1 beta · 2026</div>
+      <div class="footer-version">v.0.2 alpha · 2026</div>
     </div>
   </div>
   <div class="footer-copy">
@@ -678,7 +790,7 @@ function getFlag(teamName, databaseFlag) {
 // API — komunikacja z backendem
 // ============================================================
 const API = {
-  base: "https://ms2026.softerstudio.pl/api", 
+  base: "https://ms2026-backend-production.up.railway.app/api", 
   token: localStorage.getItem('token'),
 
   async req(method, path, body) {
@@ -737,6 +849,7 @@ const UI = {
     
     if (id === 'ranking') App.loadRanking();
     if (id === 'moje') App.loadMyBets();
+    if (id === 'drabinka') App.loadBracket();
     if (id === 'admin') Admin.load();
   },
 
@@ -1216,7 +1329,7 @@ const App = {
         // Obliczamy aktualny portfel gracza (wygrane - stawki, czyli to co reprezentuje jego cash_in)
         const walletBalance = parseFloat(p.wallet || 0);
         
-        return `<tr>
+        return `<tr class="rank-row-clickable" onclick="App.showPlayerProfile(${p.id})">
           <td style="text-align:center; font-weight:${i < 3 ? 600 : 400}; color:${i === 0 ? 'var(--gold)' : i === 1 ? '#888780' : i === 2 ? '#854F0B' : 'var(--text2)'}">${i + 1}</td>
           <td><span style="font-weight:500">${p.name}</span>${p.is_child ? ' <span class="badge b-child">dziecko</span>' : ''}${p.is_paused ? ' <span class="badge b-pause">pauza</span>' : ''}</td>
           <td><span class="badge b-hit">${p.hits || 0}</span></td>
@@ -1230,6 +1343,227 @@ const App = {
     } catch (e) { 
       console.error(e); 
     }
+  },
+
+  async showPlayerProfile(userId) {
+    const player = cachedRankingRows.find(r => r.id === userId);
+    if (!player) return;
+    UI.modal(`<div style="text-align:center;padding-bottom:10px">
+      <div style="font-size:32px;margin-bottom:4px">👤</div>
+      <div style="font-size:17px;font-weight:700">${player.name}${player.is_child?' 👶':''}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${player.is_paused?'<span style="color:var(--red)">⏸ Na pauzie</span>':'Aktywny'}</div>
+    </div>
+    <div class="player-stat-grid">
+      <div class="player-stat"><div class="player-stat-num" style="color:var(--gold)">${player.hits||0}</div><div class="player-stat-lbl">Trafień</div></div>
+      <div class="player-stat"><div class="player-stat-num">${player.total_bets||0}</div><div class="player-stat-lbl">Typów</div></div>
+      <div class="player-stat"><div class="player-stat-num" style="color:var(--green)">${player.total_bets>0?Math.round((player.hits/player.total_bets)*100):0}%</div><div class="player-stat-lbl">Skuteczność</div></div>
+      <div class="player-stat"><div class="player-stat-num" style="color:${parseFloat(player.wallet||0)>=0?'var(--green)':'var(--red)'}">${parseFloat(player.wallet||0).toFixed(0)} zł</div><div class="player-stat-lbl">Portfel</div></div>
+      <div class="player-stat"><div class="player-stat-num" style="color:var(--gold)">${parseFloat(player.winnings||0).toFixed(0)} zł</div><div class="player-stat-lbl">Wygrane</div></div>
+    </div>
+    <div id="playerBetsLoading" style="text-align:center;padding:1rem;color:var(--text2);font-size:13px"><i class="ti ti-loader"></i> Ładowanie historii typów…</div>
+    <div id="playerBetsList"></div>
+    <div class="modal-footer"><button class="btn" onclick="UI.closeModal()">Zamknij</button></div>`);
+
+    try {
+      // Pobieramy typy wszystkich meczów i filtrujemy — endpoint bets nie ma per-user dla innych,
+      // więc używamy allMatches i dla każdego finished pobieramy all-bets
+      const finishedMatches = allMatches.filter(m => m.status === 'finished' || m.status === 'live');
+      const allBetData = [];
+      await Promise.all(finishedMatches.map(async m => {
+        try {
+          const bets = await API.get(`/matches/${m.id}/all-bets`);
+          const mine = bets.find(b => b.user_name === player.name);
+          if (mine) allBetData.push({ match: m, bet: mine });
+        } catch {}
+      }));
+      allBetData.sort((a,b) => new Date(b.match.match_date) - new Date(a.match.match_date));
+
+      const el = document.getElementById('playerBetsList');
+      const loadEl = document.getElementById('playerBetsLoading');
+      if (!el) return;
+      if (loadEl) loadEl.remove();
+
+      if (!allBetData.length) {
+        el.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--text2);font-size:13px">Brak dostępnych typów</div>`;
+        return;
+      }
+      const hits = allBetData.filter(d => d.bet.is_hit === 1);
+      if (hits.length) {
+        el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--green-d);background:var(--green-l);border-radius:var(--radius-sm);padding:7px 10px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-trophy" style="color:var(--gold)"></i> Trafione: ${hits.map(d=>`<strong>${d.match.home_team} vs ${d.match.away_team}</strong> (${d.bet.score_home}:${d.bet.score_away})`).join(', ')}
+        </div>`;
+      } else { el.innerHTML = ''; }
+
+      el.innerHTML += `<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Historia typów (${allBetData.length})</div>` +
+        allBetData.map(d => {
+          const hit = d.bet.is_hit === 1;
+          const miss = d.bet.is_hit === 0;
+          return `<div class="bet-row">
+            <div style="font-size:12px">
+              ${getFlag(d.match.home_team, d.match.home_flag)}<strong>${d.match.home_team}</strong>
+              <span style="color:var(--text2);margin:0 4px">vs</span>
+              <strong>${d.match.away_team}</strong>${getFlag(d.match.away_team, d.match.away_flag)}
+              <span style="color:var(--text3);font-size:11px;margin-left:4px">${new Date(d.match.match_date).toLocaleDateString('pl',{day:'2-digit',month:'2-digit'})}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:monospace;font-size:13px;font-weight:700">${d.bet.score_home}:${d.bet.score_away}</span>
+              <span style="font-size:10px;color:var(--text3)">(${d.match.score_home}:${d.match.score_away})</span>
+              <span class="badge ${hit?'b-hit':miss?'b-miss':'b-wait'}">${hit?'✓':miss?'✗':'?'}</span>
+              ${hit&&d.bet.win_amount>0?`<span style="color:var(--green);font-size:11px;font-weight:600">+${d.bet.win_amount} zł</span>`:''}
+            </div>
+          </div>`;
+        }).join('');
+    } catch(e) {
+      const el = document.getElementById('playerBetsList');
+      if (el) el.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px">Błąd ładowania danych</div>`;
+    }
+  },
+
+  loadBracket() {
+    const wrap = document.getElementById('bracketWrap');
+    if (!wrap) return;
+
+    const byPhase = p => allMatches.filter(m => m.phase === p)
+      .sort((a,b) => new Date(a.match_date) - new Date(b.match_date));
+
+    const r32  = byPhase('r32');  // 1/16 finału
+    const r16  = byPhase('r16');  // 1/8 finału
+    const qf   = byPhase('qf');
+    const sf   = byPhase('sf');
+    const fin  = byPhase('final');
+    const third = byPhase('third');
+
+    const hasAny = r32.length||r16.length||qf.length||sf.length||fin.length;
+    if (!hasAny) {
+      wrap.innerHTML = `<div style="text-align:center;padding:4rem 2rem;color:#8899BB">
+        <div style="font-size:48px;margin-bottom:1rem">🏆</div>
+        <div style="font-size:15px;font-weight:600;color:#C8D8F0">Faza pucharowa jeszcze nie rozpoczęta</div>
+        <div style="font-size:12px;margin-top:8px">Drabinka wypełni się automatycznie po fazie grupowej</div>
+      </div>`;
+      return;
+    }
+
+    // ── Karta meczu ──────────────────────────────────────────────
+    const card = (m, flip=false) => {
+      if (!m) return `<div class="pk-card pk-tbd">
+        <div class="pk-team"><span class="pk-flag">?</span><span class="pk-tname">TBD</span></div>
+        <div class="pk-divider"></div>
+        <div class="pk-team"><span class="pk-flag">?</span><span class="pk-tname">TBD</span></div>
+      </div>`;
+
+      const home = m.home_team||'TBD', away = m.away_team||'TBD';
+      const sh = m.score_home ?? null, sa = m.score_away ?? null;
+      const done = m.status==='finished', live = m.status==='live';
+      const hW = done && Number(sh)>Number(sa);
+      const aW = done && Number(sa)>Number(sh);
+      const fH = getFlag(home, m.home_flag), fA = getFlag(away, m.away_flag);
+
+      const teamRow = (name, flag, win, score, isFlip) => {
+        const scoreEl = (done||live) ? `<span class="pk-score ${win?'pk-score-w':''}">${score}</span>` : '';
+        if (isFlip) return `<div class="pk-team pk-team-r ${win?'pk-win':''}">
+          ${scoreEl}<span class="pk-tname">${name}</span><span class="pk-flag-wrap">${flag}</span>
+        </div>`;
+        return `<div class="pk-team ${win?'pk-win':''}">
+          <span class="pk-flag-wrap">${flag}</span><span class="pk-tname">${name}</span>${scoreEl}
+        </div>`;
+      };
+
+      const cls = done?'pk-done':live?'pk-live':'';
+      const livePill = live ? `<div class="pk-live-pill"><span class="pk-ldot"></span>LIVE</div>` : '';
+      return `<div class="pk-card ${cls}">${livePill}
+        ${teamRow(home, fH, hW, sh, flip)}
+        <div class="pk-divider"></div>
+        ${teamRow(away, fA, aW, sa, flip)}
+      </div>`;
+    };
+
+    // ── Kolumna rund ─────────────────────────────────────────────
+    const col = (matches, count, label, flip=false) => {
+      const slots = Array.from({length:count},(_,i)=>matches[i]||null);
+      return `<div class="pk-col">
+        <div class="pk-round-label">${label}</div>
+        <div class="pk-slots">${slots.map(m=>`<div class="pk-slot">${card(m,flip)}</div>`).join('')}</div>
+      </div>`;
+    };
+
+    // ── Łączniki ─────────────────────────────────────────────────
+    const conn = (n, dir='r') => {
+      const lines = Array.from({length:n},()=>`
+        <div class="pk-conn-pair">
+          <div class="pk-cline pk-ct ${dir==='l'?'pk-cl':''}"></div>
+          <div class="pk-cline pk-cb ${dir==='l'?'pk-cl':''}"></div>
+        </div>`).join('');
+      return `<div class="pk-conn">${lines}</div>`;
+    };
+
+    // ── Mistrz ────────────────────────────────────────────────────
+    const finalM = fin[0]||null;
+    let champ=null, champFlag='';
+    if (finalM?.status==='finished') {
+      if (Number(finalM.score_home)>Number(finalM.score_away)) { champ=finalM.home_team; champFlag=getFlag(champ,finalM.home_flag); }
+      else { champ=finalM.away_team; champFlag=getFlag(champ,finalM.away_flag); }
+    }
+
+    // ── Podział wg bracket_pos (1-4 lewa, 5-8 prawa) ─────────────
+    const r16sorted = r16.slice().sort(function(a,b){ return (Number(a.bracket_pos)||99)-(Number(b.bracket_pos)||99); });
+    const r16L = [1,2,3,4].map(function(p){ return r16sorted.find(function(m){ return Number(m.bracket_pos)==p; })||null; });
+    const r16R = [5,6,7,8].map(function(p){ return r16sorted.find(function(m){ return Number(m.bracket_pos)==p; })||null; });
+
+    // QF — bracket_pos 1-2 lewa, 3-4 prawa
+    const qfsorted = qf.slice().sort(function(a,b){ return (Number(a.bracket_pos)||99)-(Number(b.bracket_pos)||99); });
+    const qfL = [1,2].map(function(p){ return qfsorted.find(function(m){ return Number(m.bracket_pos)==p; })||null; });
+    const qfR = [3,4].map(function(p){ return qfsorted.find(function(m){ return Number(m.bracket_pos)==p; })||null; });
+
+    // SF i pozostałe — wg daty
+    const sfL = sf.slice(0,1), sfR = sf.slice(1,2);
+    const r32halves = [r32.slice(0,Math.ceil(r32.length/2)), r32.slice(Math.ceil(r32.length/2))];
+    const r32L = r32halves[0], r32R = r32halves[1];
+
+    const r32cnt = r32.length||16, qfcnt = Math.max(qf.length,4), sfcnt = Math.max(sf.length,2);
+
+    const thirdM = third[0]||null;
+    let thirdWinner = null, thirdFlag = '';
+    if (thirdM?.status==='finished') {
+      if (Number(thirdM.score_home)>Number(thirdM.score_away)) { thirdWinner=thirdM.home_team; thirdFlag=getFlag(thirdWinner,thirdM.home_flag); }
+      else { thirdWinner=thirdM.away_team; thirdFlag=getFlag(thirdWinner,thirdM.away_flag); }
+    }
+
+    // ── Środkowy slot ─────────────────────────────────────────────
+    const centerCol = `<div class="pk-center">
+      <div class="pk-round-label" style="text-align:center">Finał</div>
+      <div class="pk-final-wrap">${card(finalM)}</div>
+      <div class="pk-champion ${champ?'pk-champ-active':''}">
+        ${champ ? `${champFlag}<span class="pk-champ-name">🏆 ${champ}</span>` : `<span style="opacity:.4;font-size:20px">🏆</span>`}
+      </div>
+      <div style="width:100%;height:1px;background:var(--pk-divider);margin:10px 0"></div>
+      <div class="pk-round-label" style="text-align:center;opacity:.7">Mecz o 3. miejsce</div>
+      <div class="pk-final-wrap" style="opacity:.8">${card(thirdM)}</div>
+      <div class="pk-champion" style="${thirdWinner?'border-color:var(--pk-conn)':'opacity:.4'}">
+        ${thirdWinner ? `${thirdFlag}<span class="pk-champ-name" style="color:var(--pk-score)">🥉 ${thirdWinner}</span>` : `<span style="font-size:18px">🥉</span>`}
+      </div>
+    </div>`;
+
+    wrap.innerHTML = `<div class="pk-outer">
+      <div class="pk-row">
+        ${r32.length ? col(r32L, Math.ceil(r32cnt/2), '1/16') : ''}
+        ${r32.length ? conn(Math.ceil(r32cnt/2)) : ''}
+        ${col(r16L, 4, '1/8 finału')}
+        ${conn(4)}
+        ${col(qfL, 2, 'Ćwierćfinał')}
+        ${conn(2)}
+        ${col(sfL, 1, 'Półfinał')}
+        ${conn(1)}
+        ${centerCol}
+        ${conn(1,'l')}
+        ${col(sfR, 1, 'Półfinał', true)}
+        ${conn(2,'l')}
+        ${col(qfR, 2, 'Ćwierćfinał', true)}
+        ${conn(4,'l')}
+        ${col(r16R, 4, '1/8 finału', true)}
+        ${r32.length ? conn(Math.ceil(r32cnt/2),'l') : ''}
+        ${r32.length ? col(r32R, Math.floor(r32cnt/2), '1/16', true) : ''}
+      </div>
+    </div>`;
   },
 
   async loadMyBets() {
