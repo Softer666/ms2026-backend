@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Typuj MŚ 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#0F6E56;--green-l:#E1F5EE;--green-d:#085041;
+  --gold:#BA7517;--gold-l:#FAEEDA;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --bg:#F4F4F1;--bg2:#EEEEE9;--bg3:#fff;
+  --border:#DDDDD8;--border2:#C8C8C2;
+  --text:#1A1A17;--text2:#6B6B63;--text3:#9B9B92;
+  --radius:10px;--radius-sm:6px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+[data-theme="dark"]{
+  --green:#2CC990;--green-l:#0A2E20;--green-d:#5EEAB8;
+  --gold:#7C9EF8;--gold-l:#151D3A;
+  --red:#E05555;--red-l:#2E0F0F;
+  --bg:#0F1117;--bg2:#181B23;--bg3:#1E2230;
+  --border:#2C3042;--border2:#3A4055;
+  --text:#E8E9ED;--text2:#8B92A8;--text3:#555D74;
+}
+[data-theme="dark"] .pool-banner{border-color:#2C3A6A}
+[data-theme="dark"] .pool-num{color:#A8BFFF}
+[data-theme="dark"] .pool-lbl{color:#7C9EF8}
+[data-theme="dark"] .tag-group{background:#151D3A;color:#7C9EF8}
+[data-theme="dark"] .tag-r16{background:#1A1535;color:#A89EF8}
+[data-theme="dark"] .tag-qf{background:#151D3A;color:#A8BFFF}
+[data-theme="dark"] .tag-sf{background:#2A1535;color:#E099CC}
+[data-theme="dark"] .tag-final{background:#151D3A;color:#A8BFFF}
+[data-theme="dark"] .tag-live{background:#2A1D05;color:#E8A030}
+[data-theme="dark"] .tag-live .ldot{background:#E8A030}
+[data-theme="dark"] .tag-fin{background:#0A2215;color:#2CC990}
+[data-theme="dark"] .alert-warn{background:#1E1A08;border-color:#4A3A10;color:#C8A040}
+[data-theme="dark"] .alert-ok{background:#0A2E20;border-color:#1A5A3A;color:#5EEAB8}
+[data-theme="dark"] .b-wait{background:#151D3A;color:#A8BFFF}
+[data-theme="dark"] .b-child{background:#151D3A;color:#A8BFFF}
+[data-theme="dark"] .b-pause{background:#2E0F0F;color:#F08080}
+[data-theme="dark"] .paused-notice{background:#2E0F0F;border-color:#5A2020;color:#F08080}
+[data-theme="dark"] .deadline{color:#A8BFFF}
+[data-theme="dark"] .modal-bg{background:rgba(0,0,0,.65)}
+body,*{transition:background-color .25s,border-color .25s,color .15s}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+/* Layout */
+.app{max-width:900px;margin:0 auto;padding:1.25rem 1rem 3rem}
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:.875rem 1.25rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.25rem;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:var(--green);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;line-height:1.1;text-align:center}
+.logo-name{font-size:16px;font-weight:600}
+.logo-sub{font-size:11px;color:var(--text2)}
+.api-pill{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);color:var(--text2)}
+.api-dot{width:6px;height:6px;border-radius:50%;background:#ccc}
+.api-dot.ok{background:#1D9E75;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* Tabs */
+.tabs{display:flex;gap:5px;margin-bottom:1rem;flex-wrap:wrap}
+.tab{padding:7px 14px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);cursor:pointer;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+.tab:hover{background:var(--bg2);color:var(--text)}
+.tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+/* Sections */
+.section{display:none}.section.show{display:block}
+/* Cards row */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.card{background:var(--bg2);border-radius:var(--radius-sm);padding:.875rem}
+.card-lbl{font-size:11px;color:var(--text2);margin-bottom:3px}
+.card-val{font-size:20px;font-weight:600}
+.card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+/* Pool banner */
+.pool-banner{background:var(--gold-l);border:1px solid #FAC775;border-radius:var(--radius);padding:.875rem 1.25rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center}
+.pool-num{font-size:22px;font-weight:700;color:#633806}
+.pool-lbl{font-size:11px;color:#854F0B;margin-bottom:2px}
+/* Match cards */
+.match-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:8px;transition:border-color .15s}
+.match-card:hover{border-color:var(--border2)}
+.match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:5px}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px}
+.tag-group{background:#E6F1FB;color:#0C447C}
+.tag-r16{background:#EEEDFE;color:#3C3489}
+.tag-qf{background:var(--gold-l);color:#633806}
+.tag-sf{background:#FAECE7;color:#712B13}
+.tag-final{background:var(--gold-l);color:#633806;font-weight:600}
+.tag-open{background:var(--green-l);color:var(--green-d)}
+.tag-live{background:var(--gold-l);color:#633806}
+.tag-live .ldot{width:6px;height:6px;border-radius:50%;background:#BA7517;animation:blink 1s infinite;display:inline-block}
+.tag-fin{background:#EAF3DE;color:#27500A}
+.tag-soon{background:var(--bg2);color:var(--text2)}
+.match-teams{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 0}
+.team{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;max-width:130px}
+.flag{font-size:26px;line-height:1}
+.tname{font-size:13px;font-weight:500;text-align:center}
+.score-show{font-size:26px;font-weight:700;min-width:65px;text-align:center}
+.score-input-wrap{display:flex;align-items:center;gap:5px}
+.sc-in{width:42px;height:36px;text-align:center;font-size:16px;font-weight:600;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text)}
+.sc-in:focus{outline:none;border-color:var(--green)}
+.sc-sep{font-size:16px;color:var(--text2);font-weight:500}
+.match-footer{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap;gap:6px;margin-top:4px}
+.bet-mine{font-size:12px;color:var(--green);font-weight:500}
+.bet-info{font-size:12px;color:var(--text2)}
+.deadline{font-size:11px;color:var(--gold)}
+.deadline.exp{color:var(--red)}
+/* Scorers & summary */
+.scorers-bar{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.scorer-pill{font-size:11px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2px 8px;color:var(--text2)}
+.summary-box{margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:13px;line-height:1.65;color:var(--text2)}
+.summary-ai-lbl{font-size:11px;color:var(--green);font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+/* Paused notice */
+.paused-notice{background:var(--red-l);border:1px solid #F7C1C1;border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:#791F1F;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+/* Buttons */
+.btn{padding:7px 14px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);cursor:pointer;color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.primary:hover{background:var(--green-d)}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.danger:hover{background:#822020}
+.btn.warn{background:var(--gold);color:#fff;border-color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* Alert */
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.alert-warn{background:var(--gold-l);border:1px solid #FAC775;color:#633806}
+.alert-ok{background:var(--green-l);border:1px solid #9FE1CB;color:var(--green-d)}
+/* Tables */
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;color:var(--text2);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:500}
+td{font-size:13px;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.b-ok{background:var(--green-l);color:var(--green-d)}
+.b-hit{background:var(--green-l);color:var(--green-d)}
+.b-miss{background:var(--bg2);color:var(--text2)}
+.b-wait{background:var(--gold-l);color:#633806}
+.b-pause{background:var(--red-l);color:#791F1F}
+.b-child{background:var(--gold-l);color:#633806}
+/* Debt bar */
+.dbar-wrap{height:5px;background:var(--bg2);border-radius:3px;width:70px;display:inline-block;vertical-align:middle;overflow:hidden}
+.dbar{height:100%;border-radius:3px;transition:width .4s}
+/* Paid input */
+.paid-in{width:62px;padding:3px 6px;font-size:13px;font-weight:500;text-align:right;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text)}
+.paid-in:focus{outline:none;border-color:var(--green)}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:300}
+.modal{background:var(--bg3);border-radius:var(--radius);padding:1.5rem;width:min(440px,92vw);border:1px solid var(--border);max-height:88vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:7px}
+.modal-footer{display:flex;justify-content:flex-end;gap:7px;margin-top:1rem}
+.form-row{margin-bottom:10px}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:3px;display:block}
+input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{
+  width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--border2);
+  border-radius:var(--radius-sm);background:var(--bg3);color:var(--text)
+}
+input:focus,select:focus{outline:none;border-color:var(--green)}
+/* Auth screen */
+.auth-wrap{max-width:380px;margin:2rem auto}
+.auth-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;text-align:center}
+.auth-card h2{font-size:18px;margin-bottom:.5rem}
+.auth-card p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+/* Section header */
+.sec-hdr{font-size:11px;font-weight:600;color:var(--text2);padding:8px 0 4px;margin:10px 0 6px;border-bottom:1px solid var(--border);letter-spacing:.05em;text-transform:uppercase}
+/* Filter row */
+.filter-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.tgl-group{display:flex;gap:2px;background:var(--bg2);padding:2px;border-radius:var(--radius-sm)}
+.tgl{padding:5px 11px;font-size:12px;border:none;border-radius:5px;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s}
+.tgl.active{background:var(--bg3);color:var(--text);box-shadow:0 0 0 1px var(--border)}
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;z-index:999;max-width:300px;animation:slideup .2s}
+@keyframes slideup{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* Rules */
+.rule-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:8px}
+.rule-title{font-size:13px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.rule-text{font-size:13px;color:var(--text2);line-height:1.65}
+/* Summary stat row */
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.sum-row:last-child{border-bottom:none}
+/* Responsive */
+@media(max-width:600px){
+  .app{padding:1rem .75rem 3rem}
+  .cards{grid-template-columns:1fr 1fr}
+  .match-teams{gap:6px}
+  .flag{font-size:22px}
+}
+/* --- STOPKA --- */
+.site-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 1.25rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg3);
+  border-radius: var(--radius) var(--radius) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--green-d), var(--green));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.footer-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.footer-version {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+.footer-copy {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.footer-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+  display: inline-block;
+}
+/* --- ANIMACJE I NOWE STYLE CSS --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseLiveDot {
+  0% { transform: scale(0.9); opacity: 0.4; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.4; }
+}
+
+/* Płynne wjeżdżanie kart meczów */
+.animate-card {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Efekt najechania myszką na mecz */
+.match-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s !important;
+}
+.match-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  border-color: var(--border2) !important;
+}
+
+/* Moduł finansowy w nagłówku */
+.balance-status {
+  background: var(--bg2);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #10b981;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.balance-status.negative {
+  border-left-color: var(--red);
+  background: var(--red-l);
+}
+.balance-amount {
+  color: var(--text);
+}
+
+/* Sekcja typów innych graczy */
+.others-bets-section {
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px dashed var(--border);
+  padding: 8px 10px;
+  margin-top: 8px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.others-bets-section.locked {
+  font-size: 11px;
+  color: var(--text2);
+  text-align: center;
+  padding: 6px;
+}
+.others-bets-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.others-bets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.other-bet-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+.other-bet-pill:hover {
+  transform: scale(1.05);
+  border-color: var(--green);
+}
+
+/* Pulsująca kropka LIVE */
+.tag-live .ldot {
+  animation: pulseLiveDot 1.4s infinite !important;
+}
+
+/* Przycisk zapisu typowania */
+.shadow-pulse:hover {
+  box-shadow: 0 0 10px rgba(15, 110, 86, 0.4);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">MŚ<br>2026</div>
+      <div>
+        <div class="logo-name">Typuj MŚ 2026</div>
+        <div class="logo-sub">Portal typowań dla znajomych</div>
+      </div>
+    </div>
+    <div id="headerRight">
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="UI.showAuthModal('login')"><i class="ti ti-login"></i> Zaloguj</button>
+        <button class="btn sm primary" onclick="UI.showAuthModal('register')">Zarejestruj się</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="authScreen">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div style="font-size:40px;margin-bottom:.5rem">⚽</div>
+        <h2>Typuj MŚ 2026</h2>
+        <p>Typuj dokładne wyniki meczów Mistrzostw Świata z przyjaciółmi. Wyniki na żywo, opisy meczów AI, rozliczenia puli automatycznie.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn primary" onclick="UI.showAuthModal('login')"><i class="ti ti-login"></i> Zaloguj się</button>
+          <button class="btn" onclick="UI.showAuthModal('register')"><i class="ti ti-user-plus"></i> Zarejestruj się</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainApp" style="display:none">
+    <div class="tabs">
+      <button class="tab active" onclick="UI.tab('mecze',this)"><i class="ti ti-ball-football"></i> Mecze</button>
+      <button class="tab" onclick="UI.tab('ranking',this)"><i class="ti ti-trophy"></i> Ranking</button>
+      <button class="tab" onclick="UI.tab('moje',this)"><i class="ti ti-list-check"></i> Moje typy</button>
+      <button class="tab" onclick="UI.tab('zasady',this)"><i class="ti ti-info-circle"></i> Zasady</button>
+      <button class="tab" id="adminTab" style="display:none" onclick="UI.tab('admin',this)"><i class="ti ti-settings"></i> Admin</button>
+    </div>
+
+    <div id="mecze" class="section show">
+      <div class="pool-banner">
+        <div><div class="pool-lbl">Aktualna pula</div><div class="pool-num" id="poolAmt">—</div></div>
+        <div><div class="pool-lbl">Przeniesiona reszta</div><div class="pool-num" id="carryAmt">—</div></div>
+        <div><div class="pool-lbl">Graczy aktywnych</div><div class="pool-num" id="activeCount">—</div></div>
+        <div style="margin-left:auto"><div class="api-pill"><span class="api-dot" id="apiDot"></span><span id="apiTxt">Łączenie…</span></div></div>
+      </div>
+      <div class="filter-row">
+        <div style="font-size:14px;font-weight:600">Harmonogram MŚ 2026</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="tgl-group">
+            <button class="tgl active" onclick="App.setFilter('all',this)">Wszystkie</button>
+            <button class="tgl" onclick="App.setFilter('open',this)">Otwarte</button>
+            <button class="tgl" onclick="App.setFilter('live',this)">Na żywo</button>
+            <button class="tgl" onclick="App.setFilter('finished',this)">Zakończone</button>
+          </div>
+          <select id="phaseFilter" style="font-size:12px;padding:4px 8px;width:auto" onchange="App.renderMatches()">
+            <option value="">Wszystkie fazy</option>
+            <option value="group">Faza grupowa</option>
+            <option value="r16">1/8 finału</option>
+            <option value="qf">Ćwierćfinały</option>
+            <option value="sf">Półfinały</option>
+            <option value="final">Finał</option>
+          </select>
+        </div>
+      </div>
+      <div id="matchList"></div>
+    </div>
+
+    <div id="ranking" class="section">
+      <div class="cards" id="rankCards"></div>
+      <table><thead><tr><th style="width:32px">Poz.</th><th>Gracz</th><th>Trafień</th><th>Typy</th><th>Portfel</th><th>Wygrane</th></tr></thead>
+      <tbody id="rankTbody"></tbody></table>
+    </div>
+
+    <div id="moje" class="section">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem">Moje typy</div>
+      <div id="myBetsDiv"></div>
+    </div>
+
+    <div id="zasady" class="section">
+      <div style="font-size:14px;font-weight:600;margin-bottom:.875rem">Regulamin typowań</div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-currency-zloty" style="color:var(--green)"></i> Opłata za udział</div><div class="rule-text">Za każdy mecz gracz wpłaca do puli <strong>3 zł</strong> (dorosły) lub <strong>1 zł</strong> (dziecko). Opłata naliczana jest automatycznie przy wysłaniu typu.</div></div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-clock" style="color:var(--gold)"></i> Deadline typowania</div><div class="rule-text">Typ należy przesłać <strong>najpóźniej 2 godziny przed</strong> meczem. Portal automatycznie blokuje możliwość typowania po tym terminie.</div></div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-target" style="color:var(--green)"></i> Co typujemy</div><div class="rule-text">Typujemy <strong>dokładny wynik meczu</strong> (np. 2:1). Tylko identyczne trafienie daje nagrodę — wynik 1:0 ≠ 2:0.</div></div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-trophy" style="color:var(--gold)"></i> Podział puli</div><div class="rule-text">Jedno trafienie → cała pula dla zwycięzcy. Kilka trafień → pula dzielona <strong>do pełnych złotych</strong> między zwycięzców. Reszta groszy i ewentualna nadwyżka przechodzi do puli <strong>następnego meczu</strong>.</div></div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-player-pause" style="color:var(--red)"></i> Pauza za spóźnienie</div><div class="rule-text">Brak typu lub typ po terminie = <strong>pauza</strong>. Pauzujący gracz nie płaci za ten mecz, ale <strong>nie może wrócić do typowania</strong> dopóki cała pula z meczów, które opuścił, nie zostanie rozdzielona między zwycięzców.</div></div>
+      <div class="rule-card"><div class="rule-title"><i class="ti ti-robot" style="color:var(--green)"></i> Automatyczne wyniki </div><div class="rule-text">Wyniki pobierane są automatycznie z API co 60 sekund.</div></div>
+    </div>
+
+    <div id="admin" class="section">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem">Panel administratora</div>
+      <div class="cards" id="adminCards"></div>
+
+      <div class="tabs" style="margin-bottom:1rem">
+        <button class="tab active" onclick="Admin.tab('gracze',this)">Gracze i wpłaty</button>
+        <button class="tab" onclick="Admin.tab('historia',this)">Historia wpłat</button>
+        <button class="tab" onclick="Admin.tab('kasa',this)">Stan kasy</button>
+        <button class="tab" onclick="Admin.tab('api',this)">API / Konfiguracja</button>
+      </div>
+
+      <div id="a-gracze" class="a-section show">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div id="totalDebtAlert"></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="Admin.addUser()"><i class="ti ti-user-plus"></i> Dodaj gracza</button>
+            <button class="btn sm primary" onclick="Admin.addPayment()"><i class="ti ti-cash"></i> Zarejestruj wpłatę</button>
+          </div>
+        </div>
+       <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--gold); background: var(--bg3); padding: 15px; border-radius: var(--radius);">
+  <h3 style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+    <i class="ti ti-brand-whatsapp" style="color: #25D366; font-size: 24px;"></i> 
+    Przepisz zakład z WhatsApp (Bypass blokady)
+  </h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: end;">
+    <div>
+      <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text2);">ID GRACZA:</label>
+      <input type="number" id="waUserId" placeholder="np. 5" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);">
+    </div>
+    <div>
+      <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text2);">ID MECZU:</label>
+      <input type="number" id="waMatchId" placeholder="np. 12" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);">
+    </div>
+    <div>
+      <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text2);">GOSPODARZE:</label>
+      <input type="number" id="waScoreHome" placeholder="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);">
+    </div>
+    <div>
+      <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text2);">GOŚCIE:</label>
+      <input type="number" id="waScoreAway" placeholder="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);">
+    </div>
+    <div>
+      <button onclick="AdminApp.submitWhatsAppBet()" class="btn" style="background: var(--green); color: #fff; width: 100%; height: 36px; border: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        <i class="ti ti-plus"></i> Zapisz typ
+      </button>
+    </div>
+  </div>
+</div>
+        <table>
+          <thead><tr><th>Gracz</th><th>Konto</th><th>Zakłady</th><th>Wpłacono</th><th>Portfel</th><th>Dług</th><th>Postęp</th><th>Akcje</th></tr></thead>
+          <tbody id="adminUsersTbody"></tbody>
+        </table>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px"><i class="ti ti-info-circle"></i> Kliknij kwotę wpłaconej, żeby ją edytować bezpośrednio w tabeli.</div>
+      </div>
+
+      <div id="a-historia" class="a-section" style="display:none">
+        <div id="histList"></div>
+      </div>
+
+      <div id="a-kasa" class="a-section" style="display:none">
+        <div class="cards" id="kasaCards"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="match-card"><div style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-arrow-down" style="color:var(--green)"></i> Wpływy</div><div id="wpylywy"></div></div>
+          <div class="match-card"><div style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-arrow-up" style="color:var(--red)"></i> Wydatki</div><div id="wydatki"></div></div>
+        </div>
+      </div>
+
+      <div id="a-api" class="a-section" style="display:none">
+        <div class="match-card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">Integracja football-data.org</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.65">Dane meczów MŚ 2026 pobierane są automatycznie co 60 sekund. Klucz API wpisz w pliku <code>.env</code> na serwerze. Darmowy plan (<strong>Free Tier</strong>) wystarczy na cały turniej.</div>
+          <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-family:monospace;color:var(--text2);margin-bottom:10px">
+            GET /v4/competitions/WC/matches<br>
+            GET /v4/competitions/WC/matches?status=LIVE<br>
+            → Rejestracja: football-data.org/client/register
+          </div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">Opisy AI (Anthropic Claude)</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.65">Po zakończeniu każdego meczu Claude automatycznie generuje podsumowanie w języku polskim: strzelcy, minuty goli, ciekawostki. Klucz API wpisz w <code>.env</code> jako <code>ANTHROPIC_API_KEY</code>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" style="max-width:900px;margin:0 auto 0">
+  <div class="footer-brand">
+    <div class="footer-logo">SS</div>
+    <div>
+      <div class="footer-name">SofterStudio</div>
+      <div class="footer-version">v.0.1 beta · 2026</div>
+    </div>
+  </div>
+  <div class="footer-copy">
+    <i class="ti ti-copyright" style="font-size:12px"></i>
+    <span>2026 SofterStudio</span>
+    <span class="footer-sep"></span>
+    <i class="ti ti-ball-football" style="font-size:12px;color:var(--green)"></i>
+    <span>Typuj MŚ 2026</span>
+    <span class="footer-sep"></span>
+    <span>Wszelkie prawa zastrzeżone</span>
+  </div>
+</footer>
+
+<div id="modalContainer"></div>
+<div id="massBetModal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+  <div class="modal-content" style="background: var(--bg3); padding: 20px; border-radius: var(--radius); max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
+      <h3 style="display: flex; align-items: center; gap: 8px; color: var(--text);">
+        <i class="ti ti-brand-whatsapp" style="color: #25D366; font-size: 24px;"></i> 
+        Masowe typy WA dla: <span id="waModalPlayerName" style="color: var(--gold);"></span>
+      </h3>
+      <button onclick="document.getElementById('massBetModal').style.display='none'" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2);">&times;</button>
+    </div>
+    
+    <input type="hidden" id="waModalUserId">
+    
+    <div id="waModalMatchesList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+      </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button onclick="document.getElementById('massBetModal').style.display='none'" class="btn" style="background: var(--bg2); color: var(--text);">Anuluj</button>
+      <button onclick="Admin.submitMassWhatsAppBets()" class="btn primary">
+        <i class="ti ti-check"></i> Zapisz wszystkie typy
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+// ============================================================
+// SYSTEM FLAG SVG (Wersja odporna na błędy - Cloudflare)
+// ============================================================
+const COUNTRY_CODES = {
+  // Europa
+  'polska': 'pl', 'poland': 'pl',
+  'niemcy': 'de', 'germany': 'de',
+  'francja': 'fr', 'france': 'fr',
+  'anglia': 'gb-eng', 'england': 'gb-eng',
+  'hiszpania': 'es', 'spain': 'es',
+  'włochy': 'it', 'italy': 'it',
+  'holandia': 'nl', 'netherlands': 'nl',
+  'belgia': 'be', 'belgium': 'be',
+  'portugalia': 'pt', 'portugal': 'pt',
+  'chorwacja': 'hr', 'croatia': 'hr',
+  'czechy': 'cz', 'czech republic': 'cz',
+  'szwajcaria': 'ch', 'switzerland': 'ch',
+  'szwecja': 'se', 'sweden': 'se',
+  'norwegia': 'no', 'norway': 'no',
+  'szkocja': 'gb-sct', 'scotland': 'gb-sct',
+  'walia': 'gb-wls', 'wales': 'gb-wls',
+  'turcja': 'tr', 'turkey': 'tr', 'türkiye': 'tr',
+  'austria': 'at',
+  'węgry': 'hu', 'hungary': 'hu',
+  'serbia': 'rs',
+  'ukraina': 'ua', 'ukraine': 'ua',
+  'dania': 'dk', 'denmark': 'dk',
+  'słowacja': 'sk', 'slovakia': 'sk',
+  'słowenia': 'si', 'slovenia': 'si',
+  'albania': 'al',
+  'rumunia': 'ro', 'romania': 'ro',
+  'grecja': 'gr', 'greece': 'gr',
+  'irlandia': 'ie', 'ireland': 'ie',
+  'finlandia': 'fi', 'finland': 'fi',
+  'islandia': 'is', 'iceland': 'is',
+  'bośnia': 'ba', 'bosnia': 'ba',
+  'czarnogóra': 'me', 'montenegro': 'me',
+  'północna macedonia': 'mk', 'north macedonia': 'mk',
+  'kosowo': 'xk', 'kosovo': 'xk',
+  'gruzja': 'ge', 'georgia': 'ge',
+  // Ameryka Południowa
+  'argentyna': 'ar', 'argentina': 'ar',
+  'brazylia': 'br', 'brazil': 'br',
+  'urugwaj': 'uy', 'uruguay': 'uy',
+  'ekwador': 'ec', 'ecuador': 'ec',
+  'kolumbia': 'co', 'colombia': 'co',
+  'chile': 'cl',
+  'peru': 'pe',
+  'wenezuela': 've', 'venezuela': 've',
+  'paragwaj': 'py', 'paraguay': 'py',
+  'boliwia': 'bo', 'bolivia': 'bo',
+  // Ameryka Północna i Środkowa
+  'meksyk': 'mx', 'mexico': 'mx',
+  'stany zjednoczone': 'us', 'usa': 'us', 'united states': 'us',
+  'kanada': 'ca', 'canada': 'ca',
+  'kostaryka': 'cr', 'costa rica': 'cr',
+  'jamajka': 'jm', 'jamaica': 'jm',
+  'panama': 'pa',
+  'honduras': 'hn',
+  'salwador': 'sv', 'el salvador': 'sv',
+  // Afryka
+  'maroko': 'ma', 'morocco': 'ma',
+  'tunezja': 'tn', 'tunisia': 'tn',
+  'egipt': 'eg', 'egypt': 'eg',
+  'algieria': 'dz', 'algeria': 'dz',
+  'nigeria': 'ng',
+  'ghana': 'gh',
+  'senegal': 'sn',
+  'kamerun': 'cm', 'cameroon': 'cm',
+  'wybrzeże kości słoniowej': 'ci', 'ivory coast': 'ci', 'côte d\'ivoire': 'ci',
+  'mali': 'ml',
+  'rpa': 'za', 'south africa': 'za',
+  'demokratyczna republika konga': 'cd', 'dr kongo': 'cd', 'dr congo': 'cd', 'congo dr': 'cd', 'kongo': 'cd',
+  'czechy': 'cz', 'czech republic': 'cz', 'czechia': 'cz', 'republika czeska': 'cz',
+  'haiti': 'ht',
+  'curaçao': 'cw', 'curacao': 'cw',
+  'wyspy zielonego przylądka': 'cv', 'cape verde': 'cv', 'cape verde islands': 'cv', 'cabo verde': 'cv',
+  // Azja
+  'arabia saudyjska': 'sa', 'saudi arabia': 'sa',
+  'japonia': 'jp', 'japan': 'jp',
+  'korea południowa': 'kr', 'south korea': 'kr', 'korea pd': 'kr',
+  'iran': 'ir',
+  'australia': 'au',
+  'katar': 'qa', 'qatar': 'qa',
+  'chiny': 'cn', 'china': 'cn',
+  'uzbekistan': 'uz',
+  'irak': 'iq', 'iraq': 'iq',
+  'jordania': 'jo', 'jordan': 'jo',
+  'nowa zelandia': 'nz', 'new zealand': 'nz',
+  'indonezja': 'id', 'indonesia': 'id',
+};
+
+function getFlag(teamName, databaseFlag) {
+  if (!teamName) return databaseFlag && databaseFlag.length <= 4 ? databaseFlag : '🏳️';
+  
+  const text = teamName.trim().toLowerCase();
+  
+  let code = null;
+  // Najpierw szukaj dokładnego dopasowania
+  if (COUNTRY_CODES[text]) {
+    code = COUNTRY_CODES[text];
+  } else {
+    // Potem częściowe dopasowanie
+    for (const key in COUNTRY_CODES) {
+      if (text.includes(key) || key.includes(text)) {
+        code = COUNTRY_CODES[key];
+        break;
+      }
+    }
+  }
+  
+  if (code) {
+    return `<img src="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/flags/4x3/${code}.svg" style="height:20px;width:28px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.35);vertical-align:middle;margin-right:8px;object-fit:cover;" alt="${teamName}" onerror="this.style.display='none'">`;
+  }
+  
+  if (databaseFlag && databaseFlag.length <= 4) return databaseFlag;
+  return '🏳️';
+}
+
+// ============================================================
+// API — komunikacja z backendem
+// ============================================================
+const API = {
+  base: "https://ms2026-backend-production.up.railway.app/api", 
+  token: localStorage.getItem('token'),
+
+  async req(method, path, body) {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}) }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(this.base + path, opts);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Błąd serwera');
+    return data;
+  },
+  get: (p) => API.req('GET', p),
+  post: (p, b) => API.req('POST', p, b),
+  patch: (p, b) => API.req('PATCH', p, b),
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;
+let currentSortMode = 'hits'; // 'won' = trafienia, 'balance' = stan portfela
+let cachedRankingRows = [];
+let allMatches = [];
+let matchFilter = 'all';
+let expandedSummaries = {};
+let adminUsers = [];
+let editingPayId = null;
+
+// ============================================================
+// UI — helpers
+// ============================================================
+const UI = {
+  toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.innerHTML = next === 'dark' ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon"></i>';
+  },
+
+  applyTheme() {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+  },
+
+  tab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    
+    const target = document.getElementById(id);
+    if (target) target.classList.add('show');
+    if (btn) btn.classList.add('active');
+    
+    if (id === 'ranking') App.loadRanking();
+    if (id === 'moje') App.loadMyBets();
+    if (id === 'admin') Admin.load();
+  },
+
+  modal(html) {
+    this.closeModal();
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg'; bg.id = 'modalBg';
+    bg.innerHTML = `<div class="modal">${html}</div>`;
+    bg.onclick = e => { if (e.target === bg) this.closeModal(); };
+    
+    const container = document.getElementById('modalContainer');
+    if (container) {
+      container.appendChild(bg);
+    } else {
+      document.body.appendChild(bg);
+    }
+  },
+
+  closeModal() { const m = document.getElementById('modalBg'); if (m) m.remove(); },
+
+  toast(msg, ok = true) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.background = ok ? 'var(--green)' : 'var(--red)';
+    t.style.color = '#fff';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  },
+
+  showAuthModal(mode) {
+    const isLogin = mode === 'login';
+    this.modal(`
+      <div class="modal-title"><i class="ti ti-${isLogin ? 'login' : 'user-plus'}"></i> ${isLogin ? 'Zaloguj się' : 'Zarejestruj się'}</div>
+      ${!isLogin ? `<div class="form-row"><label class="form-label">Imię i nazwisko</label><input type="text" id="aName" placeholder="Jan Kowalski"></div>` : ''}
+      <div class="form-row"><label class="form-label">E-mail</label><input type="email" id="aEmail" placeholder="jan@email.pl"></div>
+      <div class="form-row"><label class="form-label">Hasło</label><input type="password" id="aPass" placeholder="${isLogin ? '••••••••' : 'minimum 6 znaków'}"></div>
+      <div id="authErr" style="color:var(--red);font-size:12px;margin-top:4px"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.showAuthModal('${isLogin ? 'register' : 'login'}')">${isLogin ? 'Zarejestruj się' : 'Mam konto'}</button>
+        <button class="btn primary" onclick="Auth.submit('${mode}')"><i class="ti ti-check"></i> ${isLogin ? 'Zaloguj' : 'Zarejestruj'}</button>
+      </div>
+    `);
+  },
+
+  async setLoggedInHeader(user) {
+    if (!user) return;
+    const rightDiv = document.getElementById('headerRight');
+    if (!rightDiv) return;
+
+    // Pobieramy portfel z backendu (wpłaty - stawki + wygrane)
+    let wallet = null;
+    try { wallet = await API.get('/me/wallet'); } catch(e) { console.warn('Brak danych portfela:', e); }
+
+    const currentBalance = wallet ? parseFloat(wallet.wallet || 0) : 0;
+    const totalCashIn    = wallet ? parseFloat(wallet.total_paid_in || 0) : 0;
+    const totalStakes    = wallet ? parseFloat(wallet.total_stakes || 0) : 0;
+    const winnings       = wallet ? parseFloat(wallet.winnings || 0) : 0;
+
+    rightDiv.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="background:var(--bg2);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;font-size:13px;">
+          <i class="ti ti-wallet" style="color:var(--text2)"></i>
+          <span style="color:var(--text2)">Portfel:</span>
+          <strong style="color:${currentBalance >= 0 ? 'var(--green)' : 'var(--red)'}">${currentBalance.toFixed(0)} zł</strong>
+          <span style="font-size:10px;color:var(--text2);margin-left:2px" title="Wpłaty: ${totalCashIn.toFixed(0)} zł | Stawki: -${totalStakes.toFixed(0)} zł | Wygrane: +${winnings.toFixed(0)} zł">
+            (${totalCashIn.toFixed(0)} − ${totalStakes.toFixed(0)} + ${winnings.toFixed(0)})
+          </span>
+        </div>
+        ${user.is_paused ? '<span class="badge b-pause"><i class="ti ti-player-pause"></i> Pauza</span>' : ''}
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:30px;height:30px;border-radius:50%;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--green-d)">
+            ${user.name ? user.name.split(' ').map(w=>w[0]).join('').slice(0,2) : 'U'}
+          </div>
+          <span style="font-size:13px;font-weight:500">${user.name}</span>
+          <button class="btn sm" id="themeToggleBtn" title="Zmień motyw" onclick="UI.toggleTheme()"><i class="ti ti-moon"></i></button>
+          <button class="btn sm" title="Ustawienia konta" onclick="Auth.showChangePassword()"><i class="ti ti-settings"></i></button>
+          <button class="btn sm" title="Wyloguj" onclick="Auth.logout()"><i class="ti ti-logout"></i></button>
+        </div>
+      </div>`;
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) themeBtn.innerHTML = savedTheme === 'dark' ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon"></i>';
+  }
+};
+
+// ============================================================
+// AUTH
+// ============================================================
+const Auth = {
+  async submit(mode) {
+    const email = document.getElementById('aEmail').value.trim();
+    const pass = document.getElementById('aPass').value;
+    const name = document.getElementById('aName')?.value.trim();
+    try {
+      const data = await API.post(`/auth/${mode}`, { email, password: pass, name });
+      API.token = data.token;
+      localStorage.setItem('token', data.token);
+      currentUser = data.user;
+      UI.closeModal();
+      App.init();
+    } catch (e) {
+      const el = document.getElementById('authErr');
+      if (el) el.textContent = e.message;
+    }
+  },
+  logout() {
+    localStorage.removeItem('token');
+    API.token = null;
+    currentUser = null;
+    location.reload();
+  },
+
+  showChangePassword() {
+    UI.modal(`
+      <div class="modal-title"><i class="ti ti-key" style="color:var(--gold)"></i> Zmiana hasła</div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--text2)">
+        Zalogowany jako: <strong>${currentUser?.name || ''}</strong>
+      </div>
+      <div class="form-row"><label class="form-label">Aktualne hasło</label>
+        <input type="password" id="cpCurrent" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="form-row"><label class="form-label">Nowe hasło</label>
+        <input type="password" id="cpNew1" placeholder="minimum 6 znaków" autocomplete="new-password">
+      </div>
+      <div class="form-row"><label class="form-label">Powtórz nowe hasło</label>
+        <input type="password" id="cpNew2" placeholder="powtórz nowe hasło" autocomplete="new-password">
+      </div>
+      <div id="cpErr" style="color:var(--red);font-size:12px;margin-top:4px"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Auth.submitChangePassword()"><i class="ti ti-check"></i> Zmień hasło</button>
+      </div>`);
+  },
+
+  async submitChangePassword() {
+    const current = document.getElementById('cpCurrent').value;
+    const p1 = document.getElementById('cpNew1').value;
+    const p2 = document.getElementById('cpNew2').value;
+    const errEl = document.getElementById('cpErr');
+    if (!current) { errEl.textContent = 'Podaj aktualne hasło'; return; }
+    if (p1.length < 6) { errEl.textContent = 'Nowe hasło musi mieć minimum 6 znaków'; return; }
+    if (p1 !== p2) { errEl.textContent = 'Nowe hasła nie są identyczne'; return; }
+    try {
+      await API.post('/auth/change-password', { current_password: current, new_password: p1 });
+      UI.closeModal();
+      UI.toast('Hasło zostało zmienione ✓');
+    } catch(e) {
+      errEl.textContent = e.message;
+    }
+  }
+};
+
+// ============================================================
+// MAIN APP
+// ============================================================
+const App = {
+  async init() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    
+    if (currentUser && currentUser.role === 'admin') {
+      const adminTabBtn = document.getElementById('adminTab');
+      if (adminTabBtn) adminTabBtn.style.display = '';
+    }
+    
+    document.getElementById('apiDot').className = 'api-dot ok';
+    document.getElementById('apiTxt').textContent = 'API połączone · auto 60s';
+    
+    await this.loadMatches();
+    setInterval(() => this.loadMatches(), 60000);
+  },
+
+  async loadMatches() {
+    try {
+      allMatches = await API.get('/matches');
+      
+   try {
+  // Próba pobrania (jeśli endpoint kiedyś powstanie), ale błąd nie zepsuje reszty aplikacji
+  const userCheck = await API.get('/auth/me').catch(() => null);
+  if (userCheck && userCheck.user) {
+    currentUser = { ...currentUser, ...userCheck.user };
+  }
+} catch (e) {
+  console.log("Ignoruję brak endpointu /auth/me");
+}
+
+      UI.setLoggedInHeader(currentUser);
+      
+      if (currentUser && currentUser.role === 'admin') {
+        const adminTabBtn = document.getElementById('adminTab');
+        if (adminTabBtn) adminTabBtn.style.display = '';
+      }
+      
+      this.renderMatches();
+      this.updatePoolBanner();
+    } catch (e) { console.error(e); }
+  },
+
+  updatePoolBanner() {
+    const activeMatches = allMatches.filter(m => m.status === 'open' || m.status === 'live');
+    let displayPool = 0;
+    let displayCarry = 0;
+
+    if (activeMatches.length > 0) {
+      activeMatches.sort((a,b) => new Date(a.deadline) - new Date(b.deadline));
+      const currentMatch = activeMatches[0];
+      displayPool = parseFloat(currentMatch.pool || 0) + parseFloat(currentMatch.carry_over || 0);
+      displayCarry = parseFloat(currentMatch.carry_over || 0);
+    } else {
+      displayCarry = allMatches.reduce((s, m) => s + parseFloat(m.carry_over || 0), 0);
+    }
+
+    document.getElementById('poolAmt').textContent = displayPool.toFixed(0) + ' zł';
+    document.getElementById('carryAmt').textContent = displayCarry.toFixed(2) + ' zł';
+  },
+
+  setFilter(mode, btn) {
+    matchFilter = mode;
+    document.querySelectorAll('.tgl').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    this.renderMatches();
+  },
+
+  renderMatches() {
+    const phase = document.getElementById('phaseFilter').value;
+    const isPaused = currentUser?.is_paused;
+    let list = [...allMatches];
+    if (matchFilter === 'open') list = list.filter(m => m.status === 'open');
+    if (matchFilter === 'live') list = list.filter(m => m.status === 'live');
+    if (matchFilter === 'finished') list = list.filter(m => m.status === 'finished');
+    if (phase) list = list.filter(m => m.phase === phase);
+
+    const phaseLabels = { group:'Faza grupowa', r16:'1/8 finału', qf:'Ćwierćfinały', sf:'Półfinały', third:'Mecz o 3. miejsce', final:'Finał' };
+    const phaseCls = { group:'group', r16:'r16', qf:'qf', sf:'sf', third:'sf', final:'final' };
+
+    let html = '';
+    let lastPhase = null;
+    list.forEach(m => {
+      if (m.phase !== lastPhase) {
+        html += `<div class="sec-hdr">${phaseLabels[m.phase] || m.phase}</div>`;
+        lastPhase = m.phase;
+      }
+      const deadline = new Date(m.deadline);
+      const now = new Date();
+      const dlExp = now >= deadline;
+      const h = Math.max(0, Math.floor((deadline - now) / 3600000));
+      const min = Math.max(0, Math.floor(((deadline - now) % 3600000) / 60000));
+      const dlText = dlExp ? 'Deadline minął' : h > 24 ? `Deadline: ${deadline.toLocaleDateString('pl',{day:'2-digit',month:'2-digit'})} ${deadline.toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})}` : `Deadline za ${h}h ${min}min`;
+
+      const canBet = m.status === 'open' && !dlExp && !isPaused;
+      const statusHtml = {
+        open: `<span class="tag tag-open">Otwarte</span>`,
+        live: `<span class="tag tag-live"><span class="ldot"></span> Na żywo</span>`,
+        finished: `<span class="tag tag-fin">Zakończony</span>`,
+        upcoming: `<span class="tag tag-soon">Planowany</span>`,
+      }[m.status] || '';
+
+      let scoreHtml;
+      if (m.status === 'live' || m.status === 'finished') {
+        scoreHtml = `<div class="score-show">${m.score_home} : ${m.score_away}</div>`;
+      } else if (canBet) {
+        scoreHtml = `<div class="score-input-wrap"><input class="sc-in" type="number" min="0" max="20" value="${m.my_home ?? 0}" id="h_${m.id}"><span class="sc-sep">:</span><input class="sc-in" type="number" min="0" max="20" value="${m.my_away ?? 0}" id="a_${m.id}"></div>`;
+      } else {
+        scoreHtml = `<div class="score-show" style="font-size:18px;color:var(--text2)">— : —</div>`;
+      }
+
+      let scorersHtml = '';
+      try {
+        const sc = JSON.parse(m.scorers || '[]');
+        if (sc.length) scorersHtml = `<div class="scorers-bar">${sc.map(s=>`<span class="scorer-pill">⚽ ${s.name} ${s.minute}'</span>`).join('')}</div>`;
+      } catch {}
+
+      let summaryHtml = '';
+      if (m.status === 'finished' && m.summary_ai) {
+        if (expandedSummaries[m.id]) {
+          summaryHtml = `<div class="summary-box"><div class="summary-ai-lbl"><i class="ti ti-robot"></i> Podsumowanie AI</div>${m.summary_ai}${scorersHtml}</div>`;
+        } else {
+          summaryHtml = `<div style="margin-top:6px">${scorersHtml}<button class="btn sm" style="margin-top:6px" onclick="App.toggleSum(${m.id})"><i class="ti ti-robot"></i> Pokaż opis meczu</button></div>`;
+        }
+      } else if (m.status === 'live') {
+        summaryHtml = scorersHtml;
+      }
+
+      let betHtml;
+      const hasBet = m.my_home !== null && m.my_home !== undefined;
+      if (hasBet) {
+        const hitMark = m.is_hit === 1 ? ' ✓' : m.is_hit === 0 ? ' ✗' : '';
+        betHtml = `<span class="bet-mine"><i class="ti ti-check"></i> Twój typ: ${m.my_home}:${m.my_away}${hitMark}</span>`;
+      } else if (isPaused && m.status === 'open') {
+        betHtml = `<span class="badge b-pause"><i class="ti ti-player-pause"></i> Pauza</span>`;
+      } else {
+        betHtml = `<span class="bet-info">${m.status === 'open' && !dlExp ? 'Nie typowałeś jeszcze' : 'Brak typu'}</span>`;
+      }
+
+      const homeName = m.home_team || "Gospodarze";
+      const awayName = m.away_team || "Goście";
+      const matchPoolTotal = parseFloat(m.pool || 0) + parseFloat(m.carry_over || 0);
+
+      html += `<div class="match-card">
+        <div class="match-header">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-${phaseCls[m.phase]||'group'}">${phaseLabels[m.phase]||m.phase}</span>
+            ${m.group_name ? `<span class="tag" style="background:var(--bg2);color:var(--text2)">Gr. ${m.group_name}</span>` : ''}
+            <span class="bet-info">${new Date(m.match_date).toLocaleDateString('pl',{weekday:'short',day:'2-digit',month:'2-digit'})} ${new Date(m.match_date).toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${statusHtml}
+            ${currentUser && currentUser.role === 'admin' ? `<button class="btn sm" style="border-color:var(--gold); color:var(--gold); padding:2px 6px; font-size:11px;" onclick="Admin.editMatch(${m.id})"><i class="ti ti-edit"></i> Admin</button>` : ''}
+            ${m.status === 'open' ? `<span class="deadline ${dlExp?'exp':''}"><i class="ti ti-clock"></i> ${dlText}</span>` : ''}
+          </div>
+        </div>
+        ${isPaused && m.status === 'open' ? `<div class="paused-notice"><i class="ti ti-player-pause"></i> Jesteś na pauzie</div>` : ''}
+        <div class="match-teams">
+          <div class="team">${getFlag(homeName, m.home_flag)}<div class="tname">${homeName}</div></div>
+          ${scoreHtml}
+          <div class="team">${getFlag(awayName, m.away_flag)}<div class="tname">${awayName}</div></div>
+        </div>
+        <div style="margin: 4px 0 8px 0; padding: 4px 8px; background: var(--gold-l); border-radius: var(--radius-sm); font-size: 11px; display: inline-flex; gap: 10px; color: #633806;">
+          <span><strong>Pula meczu:</strong> ${matchPoolTotal.toFixed(0)} zł</span>
+        </div>
+        ${summaryHtml}
+        <div class="match-footer" style="border-bottom: none; padding-bottom: 4px;">
+          <div>${betHtml}</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="btn sm" style="background:var(--bg2); border:1px solid var(--border);" onclick="App.toggleComments(${m.id})"><i class="ti ti-messages"></i> Komentarze</button>
+            <span class="bet-info"><i class="ti ti-users"></i> ${m.bet_count||0} typów</span>
+            ${canBet ? `<button class="btn sm primary" onclick="App.bet(${m.id})"><i class="ti ti-send"></i> Wyślij typ</button>` : ''}
+            ${(m.status === 'live' || m.status === 'finished') ? `<button class="btn sm" id="toggle-bets-btn-${m.id}" onclick="App.toggleOthersBets(${m.id})" style="font-size:11px"><i class="ti ti-eye"></i> Typy graczy</button>` : ''}
+          <div id="others-bets-${m.id}" style="display:none;margin-top:5px;width:100%"></div></div>
+        </div>
+        <div id="comments-area-${m.id}" style="display:none; background:var(--bg2); border-top:1px solid var(--border); border-radius:0 0 var(--radius) var(--radius); margin: 8px -12px -12px -12px;"></div>
+      </div>`;
+    });
+
+   document.getElementById('matchList').innerHTML = html || `<div class="match-card" style="text-align:center;padding:2rem;color:var(--text2)">Brak meczów w tej kategorii</div>`;
+},
+
+  toggleSum(id) { expandedSummaries[id] = !expandedSummaries[id]; this.renderMatches(); },
+
+  async bet(matchId) {
+    const h = parseInt(document.getElementById('h_'+matchId).value) || 0;
+    const a = parseInt(document.getElementById('a_'+matchId).value) || 0;
+    const m = allMatches.find(x => x.id === matchId);
+    const stake = currentUser.is_child ? 1 : 3;
+    if (!confirm(`Potwierdzasz typ: ${m.home_team} ${h}:${a} ${m.away_team}?\nKoszt: ${stake} zł`)) return;
+    try {
+      await API.post(`/matches/${matchId}/bet`, { score_home: h, score_away: a });
+      UI.toast(`Typ ${h}:${a} wysłany! Powodzenia 🤞`);
+      await this.loadMatches();
+    } catch (e) { UI.toast(e.message, false); }
+  },
+// Wklej to jako osobną funkcję w obiekcie App:
+  toggleOthersBets(matchId) {
+    const container = document.getElementById(`others-bets-${matchId}`);
+    const btn = document.getElementById(`toggle-bets-btn-${matchId}`);
+    if (!container) return;
+    const isOpen = container.style.display !== 'none';
+    if (isOpen) {
+      container.style.display = 'none';
+      if (btn) btn.innerHTML = '<i class="ti ti-eye"></i> Typy graczy';
+    } else {
+      container.style.display = 'block';
+      if (btn) btn.innerHTML = '<i class="ti ti-eye-off"></i> Ukryj typy';
+      if (!container.dataset.loaded) {
+        this.loadOthersBets(matchId, `others-bets-${matchId}`);
+        container.dataset.loaded = '1';
+      }
+    }
+  },
+
+  async loadOthersBets(matchId, targetContainerId) {
+    const container = document.getElementById(targetContainerId);
+    if (!container) return;
+
+    try {
+      const bets = await API.get(`/matches/${matchId}/all-bets`);
+      
+      if (!bets || bets.length === 0) {
+        // Jeśli mecz się jeszcze nie zaczął, backend zwróci pustą tablicę lub front nic nie pokaże
+        container.innerHTML = ''; 
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="margin-top: 10px; background: var(--bg2); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+            <i class="ti ti-users"></i> Typy graczy (${bets.length}):
+          </div>
+          ${(() => {
+            const winners = bets.filter(b => b.is_hit === 1);
+            if (winners.length > 0) {
+              return `<div style="margin-bottom:8px;padding:6px 8px;background:var(--green-l);border:1px solid #9FE1CB;border-radius:var(--radius-sm);font-size:11px;color:var(--green-d);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <i class="ti ti-trophy" style="color:var(--gold)"></i>
+                <strong>Trafili:</strong>
+                ${winners.map(w => `<span style="font-weight:600">${w.user_name}${w.is_child ? ' 👶' : ''} (${w.score_home}:${w.score_away})</span>`).join(', ')}
+              </div>`;
+            }
+            return '';
+          })()}
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 5px;">
+            ${bets.map(b => {
+              let hitStyle = 'background: var(--bg3);';
+              if (b.is_hit === 1) hitStyle = 'border-color: var(--green); background: var(--green-l); color: var(--green-d);';
+              if (b.is_hit === 0) hitStyle = 'border-color: var(--red); background: var(--red-l); color: var(--red);';
+              
+              return `
+                <div style="padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; ${hitStyle}">
+                  <span style="font-size: 11px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 80px;">
+                    ${b.is_hit === 1 ? '🏆 ' : ''}${b.user_name} ${b.is_child ? '👶' : ''}
+                  </span>
+                  <span style="font-family: monospace; font-weight: bold; font-size: 11px;">
+                    ${b.score_home}:${b.score_away}
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      console.error("Błąd pobierania typów innych graczy:", e);
+    }
+  },
+  async loadRanking() {
+    try {
+      // 1. Pobieramy dane tylko jeśli jeszcze ich nie ma lub odświeżamy z serwera
+      // (Jeśli funkcja jest wywołana kliknięciem w przycisk sortowania, używamy zapamiętanych danych)
+      if (!cachedRankingRows || cachedRankingRows.length === 0 || arguments[0] === true) {
+        cachedRankingRows = await API.get('/ranking');
+      }
+      
+      // 2. Klonujemy dane do sortowania
+      let sortedRows = [...cachedRankingRows];
+      
+      // 3. Algorytm sortowania
+      if (currentSortMode === 'balance') {
+        // Sortowanie po stanie portfela (kolumna cash_in) od największego
+        sortedRows.sort((a, b) => parseFloat(b.wallet || 0) - parseFloat(a.wallet || 0));
+      } else {
+        // Domyślne sortowanie po trafieniach (kolumna hits)
+        sortedRows.sort((a, b) => parseInt(b.hits || 0, 10) - parseInt(a.hits || 0, 10));
+      }
+
+      // 4. Dodanie przycisków przełączania nad tabelą (wklejamy przed nagłówkiem rankingu lub wstrzykujemy dynamicznie)
+      // Uwaga: Poniższy kod zakłada, że nad Twoją tabelą lub wewnątrz widoku rankingu dodajemy mały panel kontrolny
+      const controlPanel = `
+        <div style="background: var(--bg2); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text2);">Sortuj tabelę:</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn sm ${currentSortMode === 'hits' ? 'primary' : ''}" style="padding: 4px 10px; font-size: 12px; cursor: pointer;" onclick="currentSortMode='hits'; App.loadRanking();">
+              <i class="ti ti-trophy"></i> Po trafieniach
+            </button>
+            <button class="btn sm ${currentSortMode === 'balance' ? 'primary' : ''}" style="padding: 4px 10px; font-size: 12px; cursor: pointer;" onclick="currentSortMode='balance'; App.loadRanking();">
+              <i class="ti ti-wallet"></i> Po portfelu
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Sprawdzamy, czy nad tabelą jest dedykowane miejsce na przyciski, jeśli nie — możemy je wstrzyknąć dynamicznie
+      let container = document.getElementById('rankingSortControls');
+      if (!container) {
+        // Jeśli nie masz takiego diva w HTML, stworzy się sam automatycznie przed tabelą rankingu
+        const tbody = document.getElementById('rankTbody');
+        if (tbody && tbody.closest('table')) {
+          const table = tbody.closest('table');
+          container = document.createElement('div');
+          container.id = 'rankingSortControls';
+          table.parentNode.insertBefore(container, table);
+        }
+      }
+      if (container) container.innerHTML = controlPanel;
+
+      // 5. Renderowanie wierszy tabeli (ZMIANA: Wpłacono zastąpione czystym Stanem Portfela)
+      document.getElementById('rankTbody').innerHTML = sortedRows.map((p, i) => {
+        // Obliczamy aktualny portfel gracza (wygrane - stawki, czyli to co reprezentuje jego cash_in)
+        const walletBalance = parseFloat(p.wallet || 0);
+        
+        return `<tr>
+          <td style="text-align:center; font-weight:${i < 3 ? 600 : 400}; color:${i === 0 ? 'var(--gold)' : i === 1 ? '#888780' : i === 2 ? '#854F0B' : 'var(--text2)'}">${i + 1}</td>
+          <td><span style="font-weight:500">${p.name}</span>${p.is_child ? ' <span class="badge b-child">dziecko</span>' : ''}${p.is_paused ? ' <span class="badge b-pause">pauza</span>' : ''}</td>
+          <td><span class="badge b-hit">${p.hits || 0}</span></td>
+          <td style="color:var(--text2)">${p.total_bets || 0}</td>
+          <td style="font-weight:600; color:${walletBalance >= 0 ? 'var(--green)' : 'var(--red)'}">${walletBalance.toFixed(2)} zł</td>
+          <td>${parseFloat(p.winnings || 0).toFixed(0)} zł</td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('activeCount').textContent = sortedRows.filter(r => !r.is_paused).length;
+    } catch (e) { 
+      console.error(e); 
+    }
+  },
+
+  async loadMyBets() {
+    try {
+      const rows = await API.get('/me/bets');
+      const div = document.getElementById('myBetsDiv');
+      if (!div) return;
+      if (!rows.length) { div.innerHTML = `<div class="match-card" style="text-align:center;padding:2rem;color:var(--text2)">Nie wysłałeś jeszcze żadnego typu</div>`; return; }
+      div.innerHTML = rows.map(b => `<div class="match-card" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div><span style="font-weight:500">${getFlag(b.home_team, b.home_flag)} ${b.home_team} vs ${b.away_team} ${getFlag(b.away_team, b.away_flag)}</span> <span class="bet-info" style="margin-left:6px">${new Date(b.match_date).toLocaleDateString('pl',{day:'2-digit',month:'2-digit'})}</span></div>
+          <span class="badge ${b.is_hit===1?'b-hit':b.is_hit===0?'b-miss':'b-wait'}">${b.is_hit===1?'✓ Trafiony':b.is_hit===0?'Pudło':'Oczekuje'}</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-top:6px">
+          Twój typ: <strong style="color:var(--text)">${b.score_home}:${b.score_away}</strong>
+          ${b.result_home!==null?` · Wynik: <strong>${b.result_home}:${b.result_away}</strong>`:''}
+          ${b.is_hit===1&&b.win_amount>0?` · <span style="color:var(--green);font-weight:600">+${b.win_amount} zł 🏆</span>`:''}
+        </div>
+      </div>`).join('');
+    } catch(e) { console.error(e); }
+  },
+
+async loadOthersBets(matchId, targetContainerId) {
+    const container = document.getElementById(targetContainerId);
+    if (!container) return;
+
+    container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text3); padding:10px;">Ładowanie typów innych graczy...</p>';
+
+    try {
+      const bets = await API.get(`/matches/${matchId}/all-bets`);
+      
+      if (!bets || bets.length === 0) {
+        container.innerHTML = `
+          <div style="font-size: 11px; color: var(--text3); text-align: center; padding: 10px; background: var(--bg2); border-radius: var(--radius-sm);">
+            <i class="ti ti-lock" style="color:var(--gold);"></i> Typy graczy zostaną odsłonięte po rozpoczęciu spotkania
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="margin-top: 10px; background: var(--bg2); padding: 10px; border-radius: var(--radius-sm);">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+            <i class="ti ti-users"></i> Typy pozostałych graczy (${bets.length}):
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px;">
+            ${bets.map(b => {
+              let hitStyle = '';
+              if (b.is_hit === 1) hitStyle = 'border-color: var(--green); background: var(--green-l); color: var(--green-d);';
+              if (b.is_hit === 0) hitStyle = 'border-color: var(--red); background: var(--red-l); color: var(--red);';
+              
+              return `
+                <div style="padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; background: var(--bg3); ${hitStyle}">
+                  <span style="font-size: 11px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 85px;">
+                    ${b.user_name} ${b.is_child ? '👶' : ''}
+                  </span>
+                  <span style="font-family: monospace; font-weight: bold; font-size: 12px;">
+                    ${b.score_home}:${b.score_away}
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      container.innerHTML = `<p style="font-size:11px; color:var(--red);">Nie udało się pobrać typów graczy.</p>`;
+    }
+  },
+  async toggleComments(matchId) {
+    const container = document.getElementById(`comments-area-${matchId}`);
+    if (!container) return;
+
+    if (container.style.display === 'block') {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--text2); text-align:center;">Ładowanie komentarzy...</div>';
+
+    try {
+      const comments = await API.get(`/comments/${matchId}`);
+      
+      let commentsHtml = `<div class="comments-list" style="max-height: 250px; overflow-y: auto; padding: 6px 0;">`;
+      
+      if (comments.length === 0) {
+        commentsHtml += `<p style="font-size:12px; color:var(--text2); margin:12px; text-align:center;">Brak komentarzy. Bądź pierwszy!</p>`;
+      } else {
+        commentsHtml += comments.map(c => {
+          const date = new Date(c.created_at).toLocaleString('pl-PL', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+          const isAdmin = c.role === 'admin' ? ' <span style="color:var(--red); font-size:10px; font-weight:600; background:rgba(255,0,0,0.1); padding:1px 4px; border-radius:3px;">ADMIN</span>' : '';
+          return `
+            <div style="border-bottom:1px solid var(--border); padding: 8px 14px; font-size:13px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text2); font-size:11px; margin-bottom:2px;">
+                <span><strong style="color:var(--text); font-weight:600;">${c.user_name}</strong>${isAdmin}</span>
+                <span>${date}</span>
+              </div>
+              <div style="color:var(--text); word-break:break-word; line-height:1.4;">${c.comment_text}</div>
+            </div>
+          `;
+        }).join('');
+      }
+      commentsHtml += `</div>`;
+
+      commentsHtml += `
+        <div style="padding:10px 14px; border-top:1px solid var(--border); display:flex; gap:8px; background:var(--bg);">
+          <input type="text" id="new-comment-txt-${matchId}" placeholder="Napisz komentarz... (max 1000 znaków)" style="flex:1; font-size:13px; padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg2); color:var(--text);" onkeydown="if(event.key==='Enter') App.addComment(${matchId})">
+          <button class="btn sm primary" onclick="App.addComment(${matchId})"><i class="ti ti-send"></i></button>
+        </div>
+      `;
+
+      container.innerHTML = commentsHtml;
+    } catch (e) {
+      container.innerHTML = `<div style="padding:12px; font-size:12px; color:var(--red); text-align:center;">Nie udało się załadować komentarzy.</div>`;
+    }
+  },
+
+  async addComment(matchId) {
+    const input = document.getElementById(`new-comment-txt-${matchId}`);
+    const text = input?.value.trim();
+    if (!text) return;
+
+    try {
+      await API.post(`/comments/${matchId}`, { comment_text: text });
+      input.value = '';
+      const container = document.getElementById(`comments-area-${matchId}`);
+      container.style.display = 'none'; 
+      this.toggleComments(matchId);
+    } catch (e) {
+      UI.toast(e.message, false);
+    }
+  }
+};
+
+// ============================================================
+// ADMIN
+// ============================================================
+const Admin = {
+  // 1. Otwieranie okna z listą otwartych meczów dla gracza
+  async openMassWhatsAppBets(userId, userName) {
+    document.getElementById('waModalPlayerName').innerText = userName;
+    document.getElementById('waModalUserId').value = userId;
+    
+    const container = document.getElementById('waModalMatchesList');
+    container.innerHTML = '<p style="text-align:center; padding:20px;">Ładowanie dostępnych meczów...</p>';
+    document.getElementById('massBetModal').style.display = 'flex';
+
+    try {
+      // Pobieramy całą listę meczów za pomocą Twojego wbudowanego klienta API
+      const matches = await API.get('/matches');
+      
+      // POPRAWKA: Usuwamy filtry statusów, żeby pokazać ABSOLUTNIE WSZYSTKIE mecze z bazy (nawet historyczne)
+      if (!matches || matches.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text2); padding:20px;">Brak meczów w bazie danych.</p>';
+        return;
+      }
+
+      // Renderowanie wierszy meczowych z polami na bramki
+      container.innerHTML = matches.map(m => {
+        const matchDate = new Date(m.match_date).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        
+        // Jeśli mecz jest już zakończony w systemie, dodamy małą etykietę informacyjną
+        const isPast = m.status === 'finished' || m.status === 'ended' ? ' <span class="badge" style="background:var(--border2); color:var(--text2); font-size:10px;">Zakończony</span>' : '';
+
+        return `
+          <div class="match-wa-row" data-match-id="${m.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); gap: 10px;">
+            <div style="flex: 1; font-size: 13px;">
+              <span style="font-weight: bold;">${m.home_team} ${m.home_flag || ''}</span> vs 
+              <span style="font-weight: bold;">${m.away_team} ${m.away_flag || ''}</span> ${isPast}
+              <div style="font-size: 11px; color: var(--text3);">${matchDate} (Pula: ${m.pool} zł)</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <input type="number" class="wa-score-home" placeholder="${m.my_home !== null ? m.my_home : '-'}" min="0" style="width: 45px; padding: 6px; text-align: center; border: 1px solid var(--border2); border-radius: 4px; background: var(--bg3);">
+              <span style="font-weight: bold;">:</span>
+              <input type="number" class="wa-score-away" placeholder="${m.my_away !== null ? m.my_away : '-'}" min="0" style="width: 45px; padding: 6px; text-align: center; border: 1px solid var(--border2); border-radius: 4px; background: var(--bg3);">
+            </div>
+            
+          </div>
+          
+        `;
+      }).join('');
+
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<p style="color:var(--red); text-align:center;">Błąd: ${e.message}</p>`;
+    }
+  },
+
+  // 2. Masowe wysyłanie wpisanych typów na serwer
+  async submitMassWhatsAppBets() {
+    const userId = parseInt(document.getElementById('waModalUserId').value, 10);
+    const rows = document.querySelectorAll('#waModalMatchesList .match-wa-row');
+    
+    let promises = [];
+    let addedCount = 0;
+
+    rows.forEach(row => {
+      const matchId = parseInt(row.getAttribute('data-match-id'), 10);
+      const homeVal = row.querySelector('.wa-score-home').value.trim();
+      const awayVal = row.querySelector('.wa-score-away').value.trim();
+
+      // Jeśli wpisałeś obie bramki dla danego spotkania, leci do zapisu
+      if (homeVal !== '' && awayVal !== '') {
+        addedCount++;
+        promises.push(
+          API.post('/admin/bets/force', {
+            user_id: userId,
+            match_id: matchId,
+            score_home: parseInt(homeVal, 10),
+            score_away: parseInt(awayVal, 10)
+          })
+        );
+      }
+    });
+
+    if (addedCount === 0) {
+      UI.toast('Nie uzupełniłeś żadnego wyniku!', false);
+      return;
+    }
+
+    try {
+      UI.toast(`Trwa zapisywanie ${addedCount} kuponów...`);
+      
+      // Wywołujemy strzały do Railway równolegle
+      const results = await Promise.all(promises);
+      const failed = results.filter(r => !r.ok);
+      
+      if (failed.length > 0) {
+        UI.toast(`Zapisano część typów, ale ${failed.length} zakończyło się błędem.`, false);
+      } else {
+        UI.toast(`Sukces! Zapisano ${addedCount} typów z WhatsAppa. 🚀`);
+      }
+
+      document.getElementById('massBetModal').style.display = 'none';
+      
+      // Odświeżenie danych na pulpicie głównym, żeby zaktualizować kasy i stany kont
+      if (typeof App !== 'undefined' && App.loadMatches) await App.loadMatches();
+      if (this.loadUsers) await this.loadUsers();
+
+    } catch (e) {
+      console.error(e);
+      UI.toast('Błąd podczas masowego zapisu: ' + e.message, false);
+    }
+  },
+  tab(id, btn) {
+    document.querySelectorAll('.a-section').forEach(s => s.style.display='none');
+    document.querySelectorAll('#admin .tab').forEach(t => t.classList.remove('active'));
+    
+    const sec = document.getElementById('a-'+id);
+    if (sec) sec.style.display = 'block';
+    if (btn) btn.classList.add('active');
+    
+    if (id==='historia') this.renderHistory();
+    if (id==='kasa') this.renderKasa();
+  },
+
+  async load() {
+    const [stats, users] = await Promise.all([API.get('/admin/stats'), API.get('/admin/users')]);
+    adminUsers = users;
+    document.getElementById('adminCards').innerHTML = `
+      <div class="card"><div class="card-lbl">Użytkownicy</div><div class="card-val">${stats.total_users}</div></div>
+      <div class="card"><div class="card-lbl">Na pauzie</div><div class="card-val" style="color:var(--red)">${stats.paused_users}</div></div>
+      <div class="card"><div class="card-lbl">Pula skumulowana</div><div class="card-val" style="color:var(--gold)">${parseFloat(stats.current_pool||0).toFixed(0)} zł</div></div>
+      <div class="card"><div class="card-lbl">Wpłaty gotówkowe</div><div class="card-val" style="color:var(--green)">${parseFloat(stats.total_cash_in||0).toFixed(0)} zł</div></div>
+      <div class="card"><div class="card-lbl">Wypłacono nagród</div><div class="card-val">${parseFloat(stats.total_paid_out||0).toFixed(0)} zł</div></div>
+      <div class="card"><div class="card-lbl">Mecze dziś</div><div class="card-val">${stats.today_matches}</div></div>`;
+    this.renderUsers();
+  },
+
+  renderUsers() {
+    // Portfel = wpłaty + wygrane - zakłady. Dług = ile jeszcze gracz jest "na minusie"
+    const walletOf = u => parseFloat(u.cash_in_db||0) + parseFloat(u.winnings||0) - parseFloat(u.total_due||0);
+    const debtOf   = u => Math.max(0, -walletOf(u));
+
+    const totalDebt = adminUsers.reduce((s,u) => s + debtOf(u), 0);
+    document.getElementById('totalDebtAlert').innerHTML = totalDebt > 0
+      ? `<div class="alert alert-warn"><i class="ti ti-alert-triangle"></i> Łączny dług: <strong>${totalDebt.toFixed(0)} zł</strong></div>`
+      : `<div class="alert alert-ok"><i class="ti ti-check"></i> Wszyscy rozliczeni!</div>`;
+
+    document.getElementById('adminUsersTbody').innerHTML = adminUsers.map(u => {
+      const due    = parseFloat(u.total_due||0);
+      const cin    = parseFloat(u.cash_in_db||0);
+      const wins   = parseFloat(u.winnings||0);
+      const wallet = cin + wins - due;
+      const debt   = Math.max(0, -wallet);
+      const pct    = due > 0 ? Math.min(100, Math.round((cin + wins) / due * 100)) : 100;
+      const barColor = pct===100?'var(--green)':pct>50?'#EF9F27':'var(--red)';
+      const isEditing = editingPayId === u.id;
+      return `<tr>
+        <td><span style="font-weight:500">${u.name}</span>${u.is_child?' <span class="badge b-child">dziecko</span>':''}${u.is_paused?' <span class="badge b-pause">pauza</span>':''}</td>
+        <td>
+          <select style="font-size:11px;padding:2px 6px;border-radius:20px;border:1px solid var(--border);width:auto" onchange="Admin.setChild(${u.id},this.value)">
+            <option value="0" ${!u.is_child?'selected':''}>dorosły (3 zł)</option>
+            <option value="1" ${u.is_child?'selected':''}>dziecko (1 zł)</option>
+          </select>
+        </td>
+        <td style="font-weight:500">${due.toFixed(0)} zł</td>
+        <td>
+          ${isEditing
+            ? `<div style="display:flex;align-items:center;gap:4px"><input class="paid-in" type="number" id="pe_${u.id}" value="${cin.toFixed(0)}" min="0" style="width:60px;"><button class="btn sm primary" onclick="Admin.savePay(${u.id})">✓</button><button class="btn sm" onclick="Admin.cancelPay()">✕</button></div>`
+            : `<span style="cursor:pointer;font-weight:500;color:${pct===100?'var(--green)':pct>0?'var(--gold)':'var(--red)'}" onclick="Admin.editPay(${u.id})" title="Kliknij, żeby edytować">${cin.toFixed(0)} zł <i class="ti ti-pencil" style="font-size:10px;opacity:.5"></i></span>`
+          }
+        </td>
+        <td style="font-weight:600;color:${wallet>=0?'var(--green)':'var(--red)'}">${wallet>=0?'+'+wallet.toFixed(0):wallet.toFixed(0)} zł</td>
+        <td>${debt > 0 ? `<span style="font-weight:600;color:var(--red)">−${debt.toFixed(0)} zł</span>` : `<span style="color:var(--green)">✓</span>`}</td>
+        <td><div style="display:flex;align-items:center;gap:5px"><div class="dbar-wrap"><div class="dbar" style="width:${pct}%;background:${barColor}"></div></div><span style="font-size:11px;color:var(--text2)">${pct}%</span></div></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn sm" style="background: #25D366; color: #fff; border: none;" onclick="Admin.openMassWhatsAppBets(${u.id}, '${u.name}')" title="Przepisz typy z WhatsApp">
+              <i class="ti ti-brand-whatsapp"></i> Typy
+            </button>
+
+            ${debt>0?`<button class="btn sm primary" onclick="Admin.quickPay(${u.id},${debt.toFixed(0)})"><i class="ti ti-cash"></i> +${debt.toFixed(0)} zł</button>`:''}
+            <button class="btn sm" onclick="Admin.togglePause(${u.id},${u.is_paused})">${u.is_paused?'<i class="ti ti-player-play"></i>':'<i class="ti ti-player-pause"></i>'}</button>
+            <button class="btn sm" onclick="Admin.playerHistory(${u.id})"><i class="ti ti-history"></i></button>
+            <button class="btn sm" style="border-color:var(--gold);color:var(--gold)" onclick="Admin.editWallet(${u.id})" title="Korekta portfela"><i class="ti ti-pencil"></i></button>
+            <button class="btn sm" style="border-color:#6B6B63;color:#6B6B63" onclick="Admin.changePassword(${u.id},'${u.name.replace(/'/g, "\\'")}')" title="Zmień hasło"><i class="ti ti-key"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  },
+
+  editPay(id) { editingPayId = id; this.renderUsers(); setTimeout(()=>{ const el=document.getElementById('pe_'+id); if(el){el.focus();el.select();} },50); },
+  cancelPay() { editingPayId=null; this.renderUsers(); },
+
+  async savePay(id) {
+    const el = document.getElementById('pe_'+id);
+    const val = parseFloat(el.value) || 0;
+    const u = adminUsers.find(x => x.id===id);
+    const old = parseFloat(u.cash_in_db||0);
+    const diff = val - old;
+    if (diff === 0) { this.cancelPay(); return; }
+    try {
+      await API.post('/admin/payments', { user_id: id, amount: diff, note: diff > 0 ? 'Korekta wpłaty' : 'Korekta zmniejszenie' });
+      UI.toast(`${u.name}: ${diff > 0 ? '+' : ''}${diff.toFixed(0)} zł zaktualizowane`);
+      editingPayId = null;
+      await this.load();
+      await App.loadMatches(); 
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  quickPay(id, amount) {
+    const u = adminUsers.find(x => x.id===id);
+    UI.modal(`<div class="modal-title"><i class="ti ti-cash" style="color:var(--green)"></i> Wpłata gotówkowa</div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px">
+        <div style="font-weight:500">${u.name}</div>
+        <div style="color:var(--text2)">Dług: <strong style="color:var(--red)">${amount} zł</strong></div>
+      </div>
+      <div class="form-row"><label class="form-label">Kwota (zł)</label><input type="number" id="qpAmt" value="${amount}" min="1"></div>
+      <div class="form-row"><label class="form-label">Notatka</label><input type="text" id="qpNote" placeholder="np. rata, całość…"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.confirmPay(${id})"><i class="ti ti-check"></i> Zatwierdź</button>
+      </div>`);
+  },
+
+  async confirmPay(id) {
+    const amt = parseFloat(document.getElementById('qpAmt').value) || 0;
+    const note = document.getElementById('qpNote').value;
+    if (amt <= 0) return UI.toast('Podaj kwotę > 0', false);
+    try {
+      await API.post('/admin/payments', { user_id: id, amount: amt, note });
+      UI.closeModal();
+      UI.toast(`Wpłata ${amt} zł zarejestrowana ✓`);
+      await this.load();
+      await App.loadMatches();
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  addPayment() {
+    UI.modal(`<div class="modal-title"><i class="ti ti-cash" style="color:var(--green)"></i> Zarejestruj wpłatę</div>
+      <div class="form-row"><label class="form-label">Gracz</label>
+        <select id="apUser">${adminUsers.map(u=>{
+          const d = Math.max(0, -(parseFloat(u.cash_in_db||0)+parseFloat(u.winnings||0)-parseFloat(u.total_due||0)));
+          return `<option value="${u.id}">${u.name} — dług: ${d.toFixed(0)} zł</option>`;
+        }).join('')}</select>
+      </div>
+      <div class="form-row"><label class="form-label">Kwota (zł)</label><input type="number" id="apAmt" placeholder="0" min="1"></div>
+      <div class="form-row"><label class="form-label">Notatka</label><input type="text" id="apNote" placeholder="np. pierwsza rata, całość…"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.submitPay()"><i class="ti ti-check"></i> Zarejestruj</button>
+      </div>`);
+  },
+
+  async submitPay() {
+    const id = parseInt(document.getElementById('apUser').value);
+    const amt = parseFloat(document.getElementById('apAmt').value) || 0;
+    const note = document.getElementById('apNote').value;
+    if (amt <= 0) return UI.toast('Podaj kwotę > 0', false);
+    try {
+      await API.post('/admin/payments', { user_id: id, amount: amt, note });
+      UI.closeModal();
+      UI.toast('Wpłata zarejestrowana ✓');
+      await this.load();
+      await App.loadMatches();
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  async togglePause(id, wasPaused) {
+    try {
+      await API.patch(`/admin/users/${id}`, { is_paused: wasPaused ? 0 : 1 });
+      UI.toast(wasPaused ? 'Pauza zdjęta' : 'Pauza ustawiona');
+      await this.load();
+    } catch (e) {
+      await API.post(`/admin/users/${id}`, { is_paused: wasPaused ? 0 : 1 });
+      UI.toast(wasPaused ? 'Pauza zdjęta' : 'Pauza ustawiona');
+      await this.load();
+    }
+  },
+
+  async setChild(id, val) {
+    try {
+      await API.patch(`/admin/users/${id}`, { is_child: parseInt(val) });
+      UI.toast('Zaktualizowano typ konta');
+      await this.load();
+    } catch(e) {
+      await API.post(`/admin/users/${id}`, { is_child: parseInt(val) });
+      UI.toast('Zaktualizowano typ konta');
+      await this.load();
+    }
+  },
+
+  addUser() {
+    UI.modal(`<div class="modal-title"><i class="ti ti-user-plus"></i> Dodaj gracza</div>
+      <div class="form-row"><label class="form-label">Imię i nazwisko</label><input type="text" id="nuName" placeholder="Jan Kowalski"></div>
+      <div class="form-row"><label class="form-label">E-mail</label><input type="email" id="nuEmail" placeholder="jan@email.pl"></div>
+      <div class="form-row"><label class="form-label">Tymczasowe hasło</label><input type="text" id="nuPass" placeholder="Np. MŚ2026!" value="MŚ2026!"></div>
+      <div class="form-row"><label class="form-label">Typ konta</label><select id="nuChild"><option value="0">Dorosły (3 zł/mecz)</option><option value="1">Dziecko (1 zł/mecz)</option></select></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.submitUser()"><i class="ti ti-check"></i> Dodaj</button>
+      </div>`);
+  },
+
+  async submitUser() {
+    const name = document.getElementById('nuName').value.trim();
+    const email = document.getElementById('nuEmail').value.trim();
+    const password = document.getElementById('nuPass').value;
+    const is_child = parseInt(document.getElementById('nuChild').value);
+    try {
+      await API.post('/admin/users', { name, email, password, is_child });
+      UI.closeModal();
+      UI.toast(`${name} dodany do portalu ✓`);
+      await this.load();
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  async playerHistory(id) {
+    const u = adminUsers.find(x => x.id===id);
+    const hist = await API.get('/admin/payments');
+    const mine = hist.filter(h => h.user_id === id);
+    const due    = parseFloat(u.total_due||0);
+    const cin    = parseFloat(u.cash_in_db||0);
+    const wins   = parseFloat(u.winnings||0);
+    const wallet = cin + wins - due;
+    const debt   = Math.max(0, -wallet);
+    UI.modal(`<div class="modal-title"><i class="ti ti-history"></i> ${u.name} — historia wpłat</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:80px;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px"><div style="font-size:11px;color:var(--text2)">Zakłady</div><div style="font-size:16px;font-weight:600">${due.toFixed(0)} zł</div></div>
+        <div style="flex:1;min-width:80px;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px"><div style="font-size:11px;color:var(--text2)">Wpłacono</div><div style="font-size:16px;font-weight:600;color:var(--green)">${cin.toFixed(0)} zł</div></div>
+        <div style="flex:1;min-width:80px;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px"><div style="font-size:11px;color:var(--text2)">Portfel</div><div style="font-size:16px;font-weight:600;color:${wallet>=0?'var(--green)':'var(--red)'}">  ${wallet>=0?'+'+wallet.toFixed(0):wallet.toFixed(0)} zł</div></div>
+        <div style="flex:1;min-width:80px;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px"><div style="font-size:11px;color:var(--text2)">Dług</div><div style="font-size:16px;font-weight:600;color:${debt>0?'var(--red)':'var(--green)'}">${debt>0?'-'+debt.toFixed(0)+' zł':'✓ 0 zł'}</div></div>
+      </div>
+      ${mine.length ? mine.map(h=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div><div style="font-weight:500;color:var(--green)">${h.amount>0?'+':''}${h.amount} zł</div>${h.note?`<div style="font-size:11px;color:var(--text2)">${h.note}</div>`:''}</div>
+        <div style="font-size:12px;color:var(--text2)">${new Date(h.created_at).toLocaleDateString('pl')}</div>
+      </div>`).join('') : `<div style="text-align:center;padding:1rem;color:var(--text2);font-size:13px">Brak historii wpłat</div>`}
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Zamknij</button>
+        ${debt>0?`<button class="btn primary" onclick="UI.closeModal();Admin.quickPay(${id},${debt.toFixed(0)})"><i class="ti ti-cash"></i> Zarejestruj wpłatę</button>`:''}
+      </div>`);
+  },
+
+  async renderHistory() {
+    const hist = await API.get('/admin/payments');
+    document.getElementById('histList').innerHTML = hist.length
+      ? hist.map(h=>`<div class="match-card" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div><div style="font-weight:500">${h.user_name}</div><div class="bet-info">${new Date(h.created_at).toLocaleDateString('pl')} · ${h.admin_name}${h.note?' · '+h.note:''}</div></div>
+          <div style="font-size:15px;font-weight:600;color:var(--green)">+${h.amount} zł</div>
+        </div>`).join('')
+      : `<div class="match-card" style="text-align:center;padding:2rem;color:var(--text2)">Brak historii wpłat</div>`;
+  },
+
+  renderKasa() {
+    const totalIn = adminUsers.reduce((s,u) => s + parseFloat(u.cash_in_db||0), 0);
+    const totalWon = adminUsers.reduce((s,u) => s + parseFloat(u.total_won||0), 0);
+    document.getElementById('kasaCards').innerHTML = `
+      <div class="card"><div class="card-lbl">Gotówka odebrana</div><div class="card-val" style="color:var(--green)">${totalIn.toFixed(0)} zł</div></div>
+      <div class="card"><div class="card-lbl">Wypłacono nagród</div><div class="card-val" style="color:var(--red)">${totalWon.toFixed(0)} zł</div></div>
+      <div class="card"><div class="card-lbl">Bilans</div><div class="card-val" style="color:${totalIn-totalWon>=0?'var(--green)':'var(--red)'}">${(totalIn-totalWon).toFixed(0)} zł</div></div>`;
+    document.getElementById('wpylywy').innerHTML = `
+      <div class="sum-row"><span style="color:var(--text2)">Wpłaty gotówkowe</span><span style="font-weight:600">${totalIn.toFixed(0)} zł</span></div>
+      <div class="sum-row"><span style="color:var(--text2)">Pozostałe do zebrania</span><span style="font-weight:600;color:var(--red)">${adminUsers.reduce((s,u)=>s+Math.max(0,-(parseFloat(u.cash_in_db||0)+parseFloat(u.winnings||0)-parseFloat(u.total_due||0))),0).toFixed(0)} zł</span></div>`;
+    document.getElementById('wydatki').innerHTML = `
+      <div class="sum-row"><span style="color:var(--text2)">Nagrody wypłacone</span><span style="font-weight:600;color:var(--red)">${totalWon.toFixed(0)} zł</span></div>`;
+  },
+
+  editMatch(matchId) {
+    const m = allMatches.find(x => x.id === matchId);
+    if (!m) return;
+
+    UI.modal(`
+      <div class="modal-title"><i class="ti ti-edit" style="color:var(--gold)"></i> Zarządzaj meczem #${m.id}</div>
+      <div style="background:var(--bg2); border-radius:var(--radius-sm); padding:10px; margin-bottom:14px; text-align:center; font-weight:600; font-size:14px;">
+        ${m.home_team} — ${m.away_team}
+      </div>
+      
+      <div style="display:flex; gap:12px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label class="form-label" style="font-size:11px;">Gole: ${m.home_team}</label>
+          <input type="number" id="admScoreHome" value="${m.score_home !== null ? m.score_home : ''}" placeholder="—" min="0" style="width:100%; text-align:center; font-weight:600;">
+        </div>
+        <div style="flex:1;">
+          <label class="form-label" style="font-size:11px;">Gole: ${m.away_team}</label>
+          <input type="number" id="admScoreAway" value="${m.score_away !== null ? m.score_away : ''}" placeholder="—" min="0" style="width:100%; text-align:center; font-weight:600;">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Status meczu</label>
+        <select id="admStatus">
+          <option value="upcoming" ${m.status==='upcoming'?'selected':''}>Planowany (upcoming)</option>
+          <option value="open" ${m.status==='open'?'selected':''}>Otwarty do typowania (open)</option>
+          <option value="live" ${m.status==='live'?'selected':''}>Na żywo (live)</option>
+          <option value="finished" ${m.status==='finished'?'selected':''}>Zakończony (finished)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Pula bazowa meczu (zł)</label>
+        <input type="number" id="admPool" value="${parseFloat(m.pool || 0).toFixed(0)}" min="0">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn" style="border-color:var(--gold);color:var(--gold)" onclick="UI.closeModal();Admin.editMatchPool(${m.id})"><i class="ti ti-coins"></i> Korekta puli</button>
+        <button class="btn primary" onclick="Admin.submitMatchEdit(${m.id})"><i class="ti ti-check"></i> Zapisz zmiany</button>
+      </div>
+    `);
+  },
+async submitWhatsAppBet() {
+    const user_id = parseInt(document.getElementById('waUserId').value);
+    const match_id = parseInt(document.getElementById('waMatchId').value);
+    const score_home = document.getElementById('waScoreHome').value.trim();
+    const score_away = document.getElementById('waScoreAway').value.trim();
+
+    // Walidacja pól na froncie
+    if (isNaN(user_id) || isNaN(match_id) || score_home === '' || score_away === '') {
+      UI.toast('Wypełnij poprawnie wszystkie pola formularza WhatsApp!', false);
+      return;
+    }
+
+    try {
+      // Wywołanie wbudowanego endpointu w Twoim backendzie (admin.js)
+      const res = await API.post('/admin/bets/force', {
+        user_id,
+        match_id,
+        score_home: parseInt(score_home, 10),
+        score_away: parseInt(score_away, 10)
+      });
+
+      if (res.ok) {
+        UI.toast('Zakład z WhatsAppa dodany! Pula meczu zaktualizowana. 🚀');
+        
+        // Czyszczenie pól po sukcesie
+        document.getElementById('waUserId').value = '';
+        document.getElementById('waMatchId').value = '';
+        document.getElementById('waScoreHome').value = '';
+        document.getElementById('waScoreAway').value = '';
+        
+        // Automatyczne odświeżenie danych na ekranie, aby widzieć zmiany w kasie i pulach
+        if (typeof App !== 'undefined' && App.loadMatches) await App.loadMatches();
+        if (this.loadUsers) await this.loadUsers();
+      } else {
+        UI.toast(res.error || 'Nie udało się dodać zakładu', false);
+      }
+    } catch (e) {
+      console.error(e);
+      UI.toast('Błąd połączenia: ' + e.message, false);
+    }
+  },
+
+  editWallet(id) {
+    const u = adminUsers.find(x => x.id === id);
+    if (!u) return;
+    const currentWinnings = parseFloat(u.winnings || 0);
+    const currentCashIn   = parseFloat(u.cash_in_db || 0);
+    UI.modal(`<div class="modal-title"><i class="ti ti-pencil" style="color:var(--gold)"></i> Korekta portfela — ${u.name}</div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+        Aktualne wygrane: <strong>${currentWinnings.toFixed(2)} zł</strong> &nbsp;|&nbsp; cash_in: <strong>${currentCashIn.toFixed(2)} zł</strong>
+      </div>
+      <div class="form-row"><label class="form-label">Nowa wartość „winnings” (zł)</label>
+        <input type="number" id="cWinnings" value="${currentWinnings.toFixed(2)}" step="0.01" min="0">
+      </div>
+      <div class="form-row"><label class="form-label">Nowa wartość „cash_in” (zł)</label>
+        <input type="number" id="cCashIn" value="${currentCashIn.toFixed(2)}" step="0.01" min="0">
+      </div>
+      <div class="form-row"><label class="form-label">Powód korekty (notatka)</label>
+        <input type="text" id="cNote" placeholder="np. błąd rozliczenia, poprawa ręczna…">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.submitWalletEdit(${id})"><i class="ti ti-check"></i> Zapisz korektę</button>
+      </div>`);
+  },
+
+  async submitWalletEdit(id) {
+    const winnings = parseFloat(document.getElementById('cWinnings').value);
+    const cash_in  = parseFloat(document.getElementById('cCashIn').value);
+    const note     = document.getElementById('cNote').value;
+    if (isNaN(winnings) || isNaN(cash_in)) return UI.toast('Podaj prawidłowe kwoty', false);
+    try {
+      await API.patch(`/admin/users/${id}/wallet`, { winnings, cash_in, note });
+      UI.closeModal();
+      UI.toast('Portfel gracza zaktualizowany ✓');
+      await this.load();
+      await App.loadMatches();
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  changePassword(userId, userName) {
+    UI.modal(`<div class="modal-title"><i class="ti ti-key" style="color:var(--gold)"></i> Zmiana has&#322;a &mdash; ${userName}</div>
+      <div class="form-row"><label class="form-label">Nowe has&#322;o</label>
+        <input type="password" id="cpPass1" placeholder="minimum 6 znak&#243;w" autocomplete="new-password">
+      </div>
+      <div class="form-row"><label class="form-label">Powt&#243;rz has&#322;o</label>
+        <input type="password" id="cpPass2" placeholder="powt&#243;rz nowe has&#322;o" autocomplete="new-password">
+      </div>
+      <div id="cpErr" style="color:var(--red);font-size:12px;margin-top:4px"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.submitPasswordChange(${userId})"><i class="ti ti-check"></i> Ustaw has&#322;o</button>
+      </div>`);
+  },
+
+  async submitPasswordChange(userId) {
+    const p1 = document.getElementById('cpPass1').value;
+    const p2 = document.getElementById('cpPass2').value;
+    const errEl = document.getElementById('cpErr');
+    if (p1.length < 6) { errEl.textContent = 'Has&#322;o musi mie&#263; minimum 6 znak&#243;w'; return; }
+    if (p1 !== p2) { errEl.textContent = 'Has&#322;a nie s&#261; identyczne'; return; }
+    try {
+      await API.patch('/admin/users/' + userId + '/password', { password: p1 });
+      UI.closeModal();
+      UI.toast('Has&#322;o zosta&#322;o zmienione ✓');
+    } catch(e) { errEl.textContent = e.message; }
+  },
+
+  editMatchPool(matchId) {
+    const m = allMatches.find(x => x.id === matchId);
+    if (!m) return;
+    UI.modal(`<div class="modal-title"><i class="ti ti-coins" style="color:var(--gold)"></i> Korekta puli — mecz #${m.id}</div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:600;text-align:center">
+        ${m.home_team} — ${m.away_team}
+      </div>
+      <div class="form-row"><label class="form-label">Pula bazowa (zł)</label>
+        <input type="number" id="epPool" value="${parseFloat(m.pool||0).toFixed(2)}" step="0.01" min="0">
+      </div>
+      <div class="form-row"><label class="form-label">Przeniesiona kumulacja carry_over (zł)</label>
+        <input type="number" id="epCarry" value="${parseFloat(m.carry_over||0).toFixed(2)}" step="0.01" min="0">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="UI.closeModal()">Anuluj</button>
+        <button class="btn primary" onclick="Admin.submitPoolEdit(${m.id})"><i class="ti ti-check"></i> Zapisz</button>
+      </div>`);
+  },
+
+  async submitPoolEdit(matchId) {
+    const pool       = parseFloat(document.getElementById('epPool').value);
+    const carry_over = parseFloat(document.getElementById('epCarry').value);
+    if (isNaN(pool) || isNaN(carry_over)) return UI.toast('Podaj prawidłowe kwoty', false);
+    try {
+      await API.patch(`/admin/matches/${matchId}/pool`, { pool, carry_over });
+      UI.closeModal();
+      UI.toast('Pula meczu zaktualizowana ✓');
+      await App.loadMatches();
+    } catch(e) { UI.toast(e.message, false); }
+  },
+
+  async submitMatchEdit(matchId) {
+    const sH = document.getElementById('admScoreHome').value.trim();
+    const sA = document.getElementById('admScoreAway').value.trim();
+    const status = document.getElementById('admStatus').value;
+    const pool = parseFloat(document.getElementById('admPool').value) || 0;
+
+    const payload = {
+      status,
+      pool,
+      score_home: sH !== '' ? parseInt(sH, 10) : null,
+      score_away: sA !== '' ? parseInt(sA, 10) : null
+    };
+
+    try {
+      // WARUNEK: Jeśli wpisano wynik i ustawiono status na zakończenie meczu
+      if (payload.score_home !== null && payload.score_away !== null && (status === 'ended' || status === 'finished')) {
+        
+        UI.toast('Trwa uruchamianie procedury rozliczania finansowego puli...');
+        
+        // WYMUSZANIE KSIĘGOWANIA: Uderzamy w POST /result, a nie w PATCH!
+        const res = await API.post(`/admin/matches/${matchId}/result`, {
+          score_home: payload.score_home,
+          score_away: payload.score_away
+        });
+
+        if (res.ok) {
+          UI.closeModal();
+          UI.toast(`Sukces! Rozliczono: ${res.winners} zwycięzców. Pula: ${res.totalPool} zł. Kumulacja: ${res.carryNext} zł! 🚀`);
+        } else {
+          UI.toast(res.error || 'Błąd systemu księgowego', false);
+          return;
+        }
+
+      } else {
+        // Zwykła edycja (np. zmiana samej puli albo daty przed meczem)
+        try {
+          await API.patch(`/admin/matches/${matchId}`, payload);
+        } catch {
+          await API.post(`/admin/matches/${matchId}`, payload);
+        }
+        UI.closeModal();
+        UI.toast('Zapisano podstawowe parametry meczu! ⚽');
+      }
+      
+      // Odświeżenie danych na ekranie (kasa graczy, pule, tabele)
+      if (typeof App !== 'undefined' && App.loadMatches) await App.loadMatches();
+      if (this.loadUsers) await this.loadUsers();
+
+    } catch (e) {
+      console.error(e);
+      UI.toast('Błąd krytyczny operacji: ' + e.message, false);
+    }
+  }
+};
+
+// ============================================================
+// AUTOSTART
+// ============================================================
+(async () => {
+  UI.applyTheme();
+  const token = localStorage.getItem('token');
+  if (token) {
+    API.token = token;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) throw new Error('expired');
+      currentUser = payload;
+      
+      currentUser.balance = parseFloat(currentUser.cash_in_db || 0);
+      
+      await App.init();
+    } catch {
+      localStorage.removeItem('token');
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>
